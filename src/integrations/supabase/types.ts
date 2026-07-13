@@ -14,7 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          accent_color: string | null
+          address: string | null
+          city: string | null
+          created_at: string
+          font_body: string | null
+          font_display: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          neutral_color: string | null
+          onboarded: boolean
+          owner_id: string
+          phone: string | null
+          plan: Database["public"]["Enums"]["plan_tier"]
+          primary_color: string | null
+          published: boolean
+          secondary_color: string | null
+          slug: string
+          state: string | null
+          style_tag: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          font_body?: string | null
+          font_display?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          neutral_color?: string | null
+          onboarded?: boolean
+          owner_id: string
+          phone?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          primary_color?: string | null
+          published?: boolean
+          secondary_color?: string | null
+          slug: string
+          state?: string | null
+          style_tag?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          font_body?: string | null
+          font_display?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          neutral_color?: string | null
+          onboarded?: boolean
+          owner_id?: string
+          phone?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          primary_color?: string | null
+          published?: boolean
+          secondary_color?: string | null
+          slug?: string
+          state?: string | null
+          style_tag?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +121,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      plan_tier: "start" | "pro" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +248,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plan_tier: ["start", "pro", "premium"],
+    },
   },
 } as const
