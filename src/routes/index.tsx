@@ -64,11 +64,11 @@ function Header() {
           <a href="#faq" className="hover:text-foreground transition">FAQ</a>
         </nav>
         <div className="flex items-center gap-3">
-          <a href="#planos" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">
+          <a href="/auth" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">
             Entrar
           </a>
           <a
-            href="#planos"
+            href="/auth"
             className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-elegant transition hover:brightness-110"
           >
             Criar meu site
@@ -102,7 +102,7 @@ function Hero() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
-              href="#planos"
+              href="/auth"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-elegant transition hover:brightness-110"
             >
               Começar grátis por 7 dias
@@ -423,7 +423,7 @@ function Pricing() {
                 <span className="text-sm text-muted-foreground">/mês</span>
               </div>
               <a
-                href="#"
+                href="/auth"
                 className={`mt-6 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition ${
                   p.highlight
                     ? "bg-gradient-primary text-primary-foreground shadow-elegant hover:brightness-110"
@@ -544,7 +544,7 @@ function CTA() {
             Envie sua logo agora e receba seu site pronto em minutos.
           </p>
           <a
-            href="#planos"
+            href="/auth"
             className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-elegant transition hover:brightness-110"
           >
             Criar meu site grátis
