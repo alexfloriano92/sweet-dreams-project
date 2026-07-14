@@ -2,8 +2,10 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { Car, MapPin, Phone, MessageCircle, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Car, MapPin, Phone, MessageCircle, Sparkles, Search, SlidersHorizontal, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+
 
 const SlugInput = z.object({ slug: z.string().min(1) });
 
