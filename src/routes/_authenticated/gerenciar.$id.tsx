@@ -684,6 +684,21 @@ function ImportCsvDialog({
             className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
           />
 
+          {analyzing && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Analisando arquivo…
+            </div>
+          )}
+
+          {stats && !analyzing && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <StatCard label="Linhas no arquivo" value={stats.total} />
+              <StatCard label="Serão inseridas" value={stats.toInsert} tone="success" />
+              <StatCard label="Serão atualizadas" value={stats.toUpdate} tone="info" />
+              <StatCard label="Ignoradas (inválidas)" value={stats.invalid} tone={stats.invalid > 0 ? "warn" : undefined} />
+            </div>
+          )}
+
           {errors.length > 0 && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
               {errors.slice(0, 5).map((e, i) => <div key={i}>{e}</div>)}
