@@ -144,7 +144,7 @@ function Onboarding() {
           <div className="mt-10 flex items-center justify-between">
             <button
               onClick={() => setStep((s) => Math.max(0, s - 1) as typeof step)}
-              disabled={step === 0}
+              disabled={step === 0 || generatingCopy}
               className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium disabled:opacity-40"
             >
               <ArrowLeft className="h-4 w-4" /> Voltar
