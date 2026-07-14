@@ -53,6 +53,19 @@ function Onboarding() {
     }
   };
 
+  const [copy, setCopy] = useState<GeneratedCopy | null>(null);
+  const [generatingCopy, setGeneratingCopy] = useState(false);
+
+  useEffect(() => {
+    if (step === 3 && palette && storeName && !copy && !generatingCopy) {
+      setGeneratingCopy(true);
+      generateStoreCopy({ data: { storeName, style: palette.style } })
+        .then((c) => setCopy(c))
+        .catch(() => toast.error("Não foi possível gerar textos, usando padrão."))
+        .finally(() => setGeneratingCopy(false));
+    }
+  }, [step, palette, storeName, copy, generatingCopy]);
+
   const finish = async () => {
     if (!file || !palette || !storeName) return;
     setSaving(true);
@@ -85,7 +98,8 @@ function Onboarding() {
         neutral_color: palette.neutral,
         style_tag: palette.style,
         onboarded: true,
-      });
+        ...(copy ?? {}),
+      } as any);
       if (insErr) throw insErr;
 
       toast.success("Loja criada! Bem-vindo ao painel.");
