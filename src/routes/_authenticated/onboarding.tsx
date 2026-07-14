@@ -7,6 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { extractPaletteFromFile, type Palette } from "@/lib/palette";
 import { generateStoreCopy, type GeneratedCopy } from "@/lib/generate-copy.functions";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -540,6 +544,7 @@ function StepReview({
 
 function CopyProgress({ step, onCancel }: { step: number; onCancel: () => void }) {
   const steps = ["Analisando identidade", "Criando textos", "Finalizando copy"];
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
       <div className="flex items-center gap-3">
@@ -564,12 +569,34 @@ function CopyProgress({ step, onCancel }: { step: number; onCancel: () => void }
         </div>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={() => setConfirmOpen(true)}
           className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           Cancelar
         </button>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar a geração de textos?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Os textos gerados pela IA serão substituídos por uma versão padrão. Você poderá editá-los depois no painel da loja.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar gerando</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmOpen(false);
+                onCancel();
+              }}
+            >
+              Sim, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
