@@ -124,7 +124,7 @@ function Onboarding() {
               onFile={onFile}
             />
           )}
-          {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} logoPreview={logoPreview!} />}
+          {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} />}
 
           <div className="mt-10 flex items-center justify-between">
             <button
