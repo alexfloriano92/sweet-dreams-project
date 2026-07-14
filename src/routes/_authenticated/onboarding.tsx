@@ -165,7 +165,7 @@ function Onboarding() {
 
         <div className="rounded-3xl border border-border bg-card p-8 shadow-elegant md:p-12">
           {step === 3 && generatingCopy && (
-            <CopyProgress step={copyProgressStep} />
+            <CopyProgress step={copyProgressStep} onCancel={cancelCopyGeneration} />
           )}
           <fieldset disabled={generatingCopy} className="border-0 p-0 m-0 min-w-0 transition-opacity disabled:opacity-60">
             {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
