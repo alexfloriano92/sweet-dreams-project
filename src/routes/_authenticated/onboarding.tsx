@@ -56,16 +56,40 @@ function Onboarding() {
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
   const [generatingCopy, setGeneratingCopy] = useState(false);
   const [copyProgressStep, setCopyProgressStep] = useState(0);
+  const copyCanceledRef = useRef(false);
 
   useEffect(() => {
     if (step === 3 && palette && storeName && !copy && !generatingCopy) {
+      copyCanceledRef.current = false;
       setGeneratingCopy(true);
       generateStoreCopy({ data: { storeName, style: palette.style } })
-        .then((c) => setCopy(c))
-        .catch(() => toast.error("Não foi possível gerar textos, usando padrão."))
-        .finally(() => setGeneratingCopy(false));
+        .then((c) => {
+          if (copyCanceledRef.current) return;
+          setCopy(c);
+        })
+        .catch(() => {
+          if (copyCanceledRef.current) return;
+          toast.error("Não foi possível gerar textos, usando padrão.");
+        })
+        .finally(() => {
+          if (copyCanceledRef.current) return;
+          setGeneratingCopy(false);
+        });
     }
   }, [step, palette, storeName, copy, generatingCopy]);
+
+  const cancelCopyGeneration = () => {
+    if (!generatingCopy) return;
+    copyCanceledRef.current = true;
+    setGeneratingCopy(false);
+    setCopy({
+      hero_title: `Bem-vindo à ${storeName}`,
+      hero_subtitle: "Os melhores veículos com atendimento personalizado.",
+      about: `A ${storeName} é referência em qualidade e confiança no mercado automotivo.`,
+      cta: "Fale conosco",
+    });
+    toast.info("Geração de textos cancelada. Você pode editar depois.");
+  };
 
   useEffect(() => {
     if (!generatingCopy) return;
