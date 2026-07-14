@@ -524,6 +524,24 @@ const CSV_TEMPLATE =
   "title,brand,model,year,km,price,fuel,transmission,color,description,featured,sold\n" +
   "Honda Civic EXL 2020 Automático,Honda,Civic,2020,45000,99900,Flex,Automático,Preto,Único dono,true,false\n";
 
+const CSV_COLUMNS = ["title","brand","model","year","km","price","fuel","transmission","color","description","featured","sold"] as const;
+
+function csvEscape(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildVehiclesCsv(rows: VehicleRow[]): string {
+  const header = CSV_COLUMNS.join(",");
+  const body = rows.map((v) =>
+    CSV_COLUMNS.map((col) => csvEscape((v as unknown as Record<string, unknown>)[col])).join(",")
+  ).join("\n");
+  return header + "\n" + body + "\n";
+}
+
+
+
 function ImportCsvDialog({
   storeId, onClose, onDone,
 }: { storeId: string; onClose: () => void; onDone: () => void }) {
