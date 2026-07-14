@@ -83,10 +83,11 @@ function Onboarding() {
     copyCanceledRef.current = true;
     setGeneratingCopy(false);
     setCopy({
-      hero_title: `Bem-vindo à ${storeName}`,
-      hero_subtitle: "Os melhores veículos com atendimento personalizado.",
-      about: `A ${storeName} é referência em qualidade e confiança no mercado automotivo.`,
-      cta: "Fale conosco",
+      hero_headline: `${storeName}: seu próximo carro está aqui`,
+      hero_subheadline: "Seminovos selecionados, revisados e com garantia.",
+      tagline: "Confiança que anda com você",
+      about_text: `A ${storeName} é referência em qualidade e confiança no mercado automotivo.`,
+      cta_text: "Ver estoque completo",
     });
     toast.info("Geração de textos cancelada. Você pode editar depois.");
   };
