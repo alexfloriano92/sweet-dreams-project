@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, Car, ExternalLink, Loader2, Plus, Save, Trash2, Upload, X, Star, CheckCircle2,
+  History, FileUp, Download, GripVertical,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,6 +17,18 @@ import {
 
 type StoreRow = Database["public"]["Tables"]["stores"]["Row"];
 type VehicleRow = Database["public"]["Tables"]["vehicles"]["Row"];
+type AuditRow = {
+  id: string;
+  store_id: string;
+  entity: string;
+  entity_id: string;
+  action: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  summary: string | null;
+  changes: Record<string, { from: unknown; to: unknown }>;
+  created_at: string;
+};
 
 export const Route = createFileRoute("/_authenticated/gerenciar/$id")({
   head: () => ({
@@ -35,11 +48,12 @@ function Manage() {
   const [loading, setLoading] = useState(true);
   const [savingStore, setSavingStore] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [tab, setTab] = useState<"info" | "textos" | "veiculos">("info");
+  const [tab, setTab] = useState<"info" | "textos" | "veiculos" | "historico">("info");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<VehicleRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleRow | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -55,6 +69,11 @@ function Manage() {
       setLoading(false);
     })();
   }, [id, navigate]);
+
+  const reloadVehicles = async () => {
+    const { data: vs } = await supabase.from("vehicles").select("*").eq("store_id", id).order("created_at", { ascending: false });
+    setVehicles((vs as VehicleRow[]) ?? []);
+  };
 
   const saveStore = async (patch: Partial<StoreRow>): Promise<void> => {
     if (!store) return;
@@ -140,16 +159,17 @@ function Manage() {
           </div>
         </div>
 
-        <div className="mt-6 flex gap-1 border-b border-border">
+        <div className="mt-6 flex gap-1 border-b border-border overflow-x-auto">
           {([
             ["info", "Informações"],
             ["textos", "Textos"],
             ["veiculos", `Veículos (${vehicles.length})`],
+            ["historico", "Histórico"],
           ] as const).map(([k, label]) => (
             <button
               key={k}
               onClick={() => setTab(k)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors ${
                 tab === k ? "border-b-2 border-primary text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -167,8 +187,10 @@ function Manage() {
               onAdd={() => { setEditing(null); setDialogOpen(true); }}
               onEdit={(v) => { setEditing(v); setDialogOpen(true); }}
               onDelete={(v) => setDeleteTarget(v)}
+              onImport={() => setImportOpen(true)}
             />
           )}
+          {tab === "historico" && <HistoryTab storeId={store.id} />}
         </div>
       </main>
 
@@ -178,6 +200,14 @@ function Manage() {
           existing={editing}
           onClose={() => setDialogOpen(false)}
           onSaved={onVehicleSaved}
+        />
+      )}
+
+      {importOpen && (
+        <ImportCsvDialog
+          storeId={store.id}
+          onClose={() => setImportOpen(false)}
+          onDone={async () => { setImportOpen(false); await reloadVehicles(); }}
         />
       )}
 
@@ -273,12 +303,13 @@ function CopyTab({ store, onSave, saving }: { store: StoreRow; onSave: (p: Parti
 
 /* ---------------- VEHICLES TAB ---------------- */
 function VehiclesTab({
-  vehicles, onAdd, onEdit, onDelete,
+  vehicles, onAdd, onEdit, onDelete, onImport,
 }: {
   vehicles: VehicleRow[];
   onAdd: () => void;
   onEdit: (v: VehicleRow) => void;
   onDelete: (v: VehicleRow) => void;
+  onImport: () => void;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
@@ -287,19 +318,27 @@ function VehiclesTab({
           <h2 className="font-display text-xl font-bold">Estoque de veículos</h2>
           <p className="mt-1 text-sm text-muted-foreground">Cadastre e gerencie os carros exibidos no seu site.</p>
         </div>
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110"
-        >
-          <Plus className="h-4 w-4" /> Novo veículo
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={onImport}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold hover:bg-surface/70"
+          >
+            <FileUp className="h-4 w-4" /> Importar CSV
+          </button>
+          <button
+            onClick={onAdd}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110"
+          >
+            <Plus className="h-4 w-4" /> Novo veículo
+          </button>
+        </div>
       </div>
 
       {vehicles.length === 0 ? (
         <div className="mt-8 rounded-xl border border-dashed border-border bg-surface/30 p-10 text-center">
           <Car className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="mt-3 font-semibold">Nenhum veículo cadastrado</p>
-          <p className="mt-1 text-sm text-muted-foreground">Clique em "Novo veículo" para começar seu estoque.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Clique em "Novo veículo" ou "Importar CSV" para começar seu estoque.</p>
         </div>
       ) : (
         <div className="mt-6 divide-y divide-border">
@@ -352,6 +391,314 @@ function VehiclesTab({
   );
 }
 
+/* ---------------- HISTORY TAB ---------------- */
+function HistoryTab({ storeId }: { storeId: string }) {
+  const [rows, setRows] = useState<AuditRow[] | null>(null);
+  const [filter, setFilter] = useState<"all" | "store" | "vehicle">("all");
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("audit_logs" as never)
+        .select("*")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) { toast.error(error.message); setRows([]); return; }
+      setRows((data as unknown as AuditRow[]) ?? []);
+    })();
+  }, [storeId]);
+
+  const filtered = useMemo(
+    () => (rows ?? []).filter((r) => filter === "all" || r.entity === filter),
+    [rows, filter]
+  );
+
+  const actionLabel = (a: string) =>
+    a === "created" ? "Criado" : a === "updated" ? "Atualizado" : a === "deleted" ? "Removido" : a;
+  const actionColor = (a: string) =>
+    a === "created" ? "bg-success/15 text-success" :
+    a === "deleted" ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary";
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold flex items-center gap-2">
+            <History className="h-5 w-5" /> Histórico de alterações
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Registros das últimas 200 mudanças (quem alterou e quando).</p>
+        </div>
+        <div className="flex gap-1 rounded-full border border-border bg-surface p-1 text-xs">
+          {(["all","store","vehicle"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={`rounded-full px-3 py-1.5 font-medium ${filter === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              {k === "all" ? "Tudo" : k === "store" ? "Loja" : "Veículos"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {rows === null ? (
+        <div className="mt-6 flex justify-center py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-8 rounded-xl border border-dashed border-border bg-surface/30 p-10 text-center text-sm text-muted-foreground">
+          Nenhum registro ainda.
+        </div>
+      ) : (
+        <ul className="mt-6 divide-y divide-border">
+          {filtered.map((r) => {
+            const date = new Date(r.created_at);
+            const changeKeys = r.changes ? Object.keys(r.changes) : [];
+            return (
+              <li key={r.id} className="py-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${actionColor(r.action)}`}>
+                    {actionLabel(r.action)}
+                  </span>
+                  <span className="font-medium">{r.summary ?? `${r.entity} ${r.action}`}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {r.actor_name ?? "Sistema"} · {date.toLocaleString("pt-BR")}
+                  </span>
+                </div>
+                {r.action === "updated" && changeKeys.length > 0 && (
+                  <details className="mt-1.5 text-xs text-muted-foreground">
+                    <summary className="cursor-pointer">Ver {changeKeys.length} alteração(ões)</summary>
+                    <ul className="mt-2 space-y-1 rounded-lg bg-surface/40 p-3 font-mono">
+                      {changeKeys.slice(0, 12).map((k) => (
+                        <li key={k}>
+                          <span className="font-semibold text-foreground">{k}:</span>{" "}
+                          <span className="text-destructive line-through">{fmtVal(r.changes[k]?.from)}</span>{" → "}
+                          <span className="text-success">{fmtVal(r.changes[k]?.to)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function fmtVal(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "string") return v.length > 60 ? v.slice(0, 60) + "…" : v;
+  if (typeof v === "object") return JSON.stringify(v).slice(0, 60);
+  return String(v);
+}
+
+/* ---------------- CSV IMPORT DIALOG ---------------- */
+const CSV_TEMPLATE =
+  "title,brand,model,year,km,price,fuel,transmission,color,description,featured,sold\n" +
+  "Honda Civic EXL 2020 Automático,Honda,Civic,2020,45000,99900,Flex,Automático,Preto,Único dono,true,false\n";
+
+function ImportCsvDialog({
+  storeId, onClose, onDone,
+}: { storeId: string; onClose: () => void; onDone: () => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<Record<string, string>[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+
+  const parseFile = async (f: File) => {
+    setFile(f);
+    setErrors([]);
+    const text = await f.text();
+    const rows = parseCsv(text);
+    if (rows.length === 0) { setErrors(["Arquivo vazio."]); setPreview([]); return; }
+    const errs: string[] = [];
+    rows.forEach((r, i) => {
+      if (!r.title || !r.title.trim()) errs.push(`Linha ${i + 2}: título vazio`);
+    });
+    setErrors(errs);
+    setPreview(rows.slice(0, 50));
+  };
+
+  const doImport = async () => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      const payload = rows
+        .filter((r) => r.title && r.title.trim())
+        .map((r) => ({
+          store_id: storeId,
+          title: r.title.trim(),
+          brand: r.brand?.trim() || null,
+          model: r.model?.trim() || null,
+          year: r.year ? parseInt(String(r.year).replace(/\D/g, ""), 10) || null : null,
+          km: r.km ? parseInt(String(r.km).replace(/\D/g, ""), 10) || null : null,
+          price: r.price ? parseFloat(String(r.price).replace(/\./g, "").replace(",", ".")) || null : null,
+          fuel: r.fuel?.trim() || null,
+          transmission: r.transmission?.trim() || null,
+          color: r.color?.trim() || null,
+          description: r.description?.trim() || null,
+          featured: parseBool(r.featured),
+          sold: parseBool(r.sold),
+          photos: [] as unknown as Database["public"]["Tables"]["vehicles"]["Insert"]["photos"],
+        }));
+
+      if (payload.length === 0) { toast.error("Nenhuma linha válida."); return; }
+
+      // Upsert-by-title strategy: fetch existing titles for this store and update, insert the rest.
+      const titles = payload.map((p) => p.title);
+      const { data: existing } = await supabase
+        .from("vehicles").select("id,title").eq("store_id", storeId).in("title", titles);
+      const map = new Map((existing ?? []).map((e) => [e.title, e.id]));
+
+      let inserted = 0, updated = 0;
+      for (const p of payload) {
+        const id = map.get(p.title);
+        if (id) {
+          const { error } = await supabase.from("vehicles").update(p).eq("id", id);
+          if (error) throw error;
+          updated++;
+        } else {
+          const { error } = await supabase.from("vehicles").insert(p);
+          if (error) throw error;
+          inserted++;
+        }
+      }
+      toast.success(`Importação concluída: ${inserted} novo(s), ${updated} atualizado(s)`);
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao importar CSV");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "modelo-veiculos.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Importar veículos via CSV</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-surface/40 p-4 text-sm">
+            <p className="font-semibold">Colunas aceitas</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              <code>title, brand, model, year, km, price, fuel, transmission, color, description, featured, sold</code>
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Linhas com o mesmo <b>title</b> de um veículo existente serão atualizadas; as demais serão adicionadas.
+              Fotos devem ser adicionadas depois, editando cada veículo.
+            </p>
+            <button onClick={downloadTemplate} className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
+              <Download className="h-3.5 w-3.5" /> Baixar modelo de CSV
+            </button>
+          </div>
+
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => e.target.files && e.target.files[0] && parseFile(e.target.files[0])}
+            className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
+          />
+
+          {errors.length > 0 && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+              {errors.slice(0, 5).map((e, i) => <div key={i}>{e}</div>)}
+              {errors.length > 5 && <div>… e mais {errors.length - 5} erro(s)</div>}
+            </div>
+          )}
+
+          {preview.length > 0 && (
+            <div className="max-h-64 overflow-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-surface text-left">
+                  <tr>
+                    <th className="p-2">Título</th><th className="p-2">Marca</th><th className="p-2">Modelo</th>
+                    <th className="p-2">Ano</th><th className="p-2">Preço</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.map((r, i) => (
+                    <tr key={i} className="border-t border-border">
+                      <td className="p-2">{r.title}</td>
+                      <td className="p-2">{r.brand}</td>
+                      <td className="p-2">{r.model}</td>
+                      <td className="p-2">{r.year}</td>
+                      <td className="p-2">{r.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="border-t border-border p-2 text-[11px] text-muted-foreground">
+                Mostrando {preview.length} linha(s) de pré-visualização.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface">Cancelar</button>
+          <button
+            onClick={doImport}
+            disabled={!file || importing || errors.length > 0}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110 disabled:opacity-50"
+          >
+            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            Importar
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function parseBool(v: unknown): boolean {
+  const s = String(v ?? "").toLowerCase().trim();
+  return s === "true" || s === "1" || s === "sim" || s === "yes" || s === "x";
+}
+
+/** Minimal CSV parser: quoted fields, escaped quotes, commas, CRLF. */
+function parseCsv(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { cur.push(field); field = ""; }
+      else if (c === "\n") { cur.push(field); rows.push(cur); cur = []; field = ""; }
+      else if (c === "\r") { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length > 0 || cur.length > 0) { cur.push(field); rows.push(cur); }
+  if (rows.length === 0) return [];
+  const header = rows[0].map((h) => h.trim().toLowerCase());
+  return rows.slice(1).filter((r) => r.some((v) => v.trim() !== "")).map((r) => {
+    const obj: Record<string, string> = {};
+    header.forEach((h, idx) => { obj[h] = (r[idx] ?? "").trim(); });
+    return obj;
+  });
+}
+
 /* ---------------- VEHICLE DIALOG ---------------- */
 function VehicleDialog({
   storeId, existing, onClose, onSaved,
@@ -378,6 +725,8 @@ function VehicleDialog({
   );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const uploadPhotos = async (files: FileList) => {
@@ -406,6 +755,16 @@ function VehicleDialog({
   };
 
   const removePhoto = (idx: number) => setPhotos((prev) => prev.filter((_, i) => i !== idx));
+
+  const movePhoto = (from: number, to: number) => {
+    if (from === to) return;
+    setPhotos((prev) => {
+      const next = prev.slice();
+      const [it] = next.splice(from, 1);
+      next.splice(to, 0, it);
+      return next;
+    });
+  };
 
   const save = async () => {
     if (!title.trim()) return toast.error("Informe o título do anúncio");
@@ -475,12 +834,30 @@ function VehicleDialog({
 
         <div className="mt-2">
           <p className="text-sm font-medium">Fotos</p>
-          <p className="text-xs text-muted-foreground">A primeira foto é usada como capa no site.</p>
+          <p className="text-xs text-muted-foreground">Arraste para reordenar. A primeira foto é usada como capa no site.</p>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
             {photos.map((url, i) => (
-              <div key={url + i} className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
-                <img src={url} alt="" className="h-full w-full object-cover" />
+              <div
+                key={url + i}
+                draggable
+                onDragStart={() => setDragIdx(i)}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(i); }}
+                onDragLeave={() => setDragOver((prev) => (prev === i ? null : prev))}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIdx !== null) movePhoto(dragIdx, i);
+                  setDragIdx(null); setDragOver(null);
+                }}
+                onDragEnd={() => { setDragIdx(null); setDragOver(null); }}
+                className={`group relative aspect-[4/3] cursor-grab overflow-hidden rounded-lg border-2 bg-muted transition ${
+                  dragOver === i ? "border-primary ring-2 ring-primary/30" : "border-border"
+                } ${dragIdx === i ? "opacity-40" : ""}`}
+              >
+                <img src={url} alt="" className="pointer-events-none h-full w-full object-cover" draggable={false} />
                 {i === 0 && <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase text-primary-foreground">Capa</span>}
+                <span className="absolute bottom-1 left-1 rounded bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100">
+                  <GripVertical className="h-3 w-3" />
+                </span>
                 <button
                   onClick={() => removePhoto(i)}
                   className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
