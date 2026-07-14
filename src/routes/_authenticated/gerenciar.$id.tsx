@@ -762,6 +762,9 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone?:
       <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
     </div>
   );
+}
+
+
 
 function parseBool(v: unknown): boolean {
   const s = String(v ?? "").toLowerCase().trim();
