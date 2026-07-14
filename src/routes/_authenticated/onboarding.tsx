@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight, ArrowLeft, Check, Loader2, Upload, Sparkles, Car,
 } from "lucide-react";
@@ -56,16 +56,41 @@ function Onboarding() {
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
   const [generatingCopy, setGeneratingCopy] = useState(false);
   const [copyProgressStep, setCopyProgressStep] = useState(0);
+  const copyCanceledRef = useRef(false);
 
   useEffect(() => {
     if (step === 3 && palette && storeName && !copy && !generatingCopy) {
+      copyCanceledRef.current = false;
       setGeneratingCopy(true);
       generateStoreCopy({ data: { storeName, style: palette.style } })
-        .then((c) => setCopy(c))
-        .catch(() => toast.error("Não foi possível gerar textos, usando padrão."))
-        .finally(() => setGeneratingCopy(false));
+        .then((c) => {
+          if (copyCanceledRef.current) return;
+          setCopy(c);
+        })
+        .catch(() => {
+          if (copyCanceledRef.current) return;
+          toast.error("Não foi possível gerar textos, usando padrão.");
+        })
+        .finally(() => {
+          if (copyCanceledRef.current) return;
+          setGeneratingCopy(false);
+        });
     }
   }, [step, palette, storeName, copy, generatingCopy]);
+
+  const cancelCopyGeneration = () => {
+    if (!generatingCopy) return;
+    copyCanceledRef.current = true;
+    setGeneratingCopy(false);
+    setCopy({
+      hero_headline: `${storeName}: seu próximo carro está aqui`,
+      hero_subheadline: "Seminovos selecionados, revisados e com garantia.",
+      tagline: "Confiança que anda com você",
+      about_text: `A ${storeName} é referência em qualidade e confiança no mercado automotivo.`,
+      cta_text: "Ver estoque completo",
+    });
+    toast.info("Geração de textos cancelada. Você pode editar depois.");
+  };
 
   useEffect(() => {
     if (!generatingCopy) return;
@@ -140,7 +165,7 @@ function Onboarding() {
 
         <div className="rounded-3xl border border-border bg-card p-8 shadow-elegant md:p-12">
           {step === 3 && generatingCopy && (
-            <CopyProgress step={copyProgressStep} />
+            <CopyProgress step={copyProgressStep} onCancel={cancelCopyGeneration} />
           )}
           <fieldset disabled={generatingCopy} className="border-0 p-0 m-0 min-w-0 transition-opacity disabled:opacity-60">
             {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
@@ -513,7 +538,7 @@ function StepReview({
   );
 }
 
-function CopyProgress({ step }: { step: number }) {
+function CopyProgress({ step, onCancel }: { step: number; onCancel: () => void }) {
   const steps = ["Analisando identidade", "Criando textos", "Finalizando copy"];
   return (
     <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
@@ -537,6 +562,13 @@ function CopyProgress({ step }: { step: number }) {
             ))}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Cancelar
+        </button>
       </div>
     </div>
   );
