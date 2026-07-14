@@ -122,13 +122,31 @@ function Dashboard() {
                 </div>
 
                 <div className="mt-5 flex items-center justify-between text-sm">
-                  <span className={`inline-flex items-center gap-1.5 ${s.published ? "text-success" : "text-muted-foreground"}`}>
+                  <button
+                    onClick={async () => {
+                      const next = !s.published;
+                      const { error } = await supabase.from("stores").update({ published: next }).eq("id", s.id);
+                      if (error) return toast.error(error.message);
+                      setStores((prev) => prev.map((x) => (x.id === s.id ? { ...x, published: next } : x)));
+                      toast.success(next ? "Site publicado!" : "Site despublicado");
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      s.published
+                        ? "bg-success/15 text-success hover:bg-success/25"
+                        : "bg-muted text-muted-foreground hover:bg-muted/70"
+                    }`}
+                  >
                     <span className={`h-2 w-2 rounded-full ${s.published ? "bg-success" : "bg-muted-foreground"}`} />
-                    {s.published ? "Publicado" : "Rascunho"}
-                  </span>
-                  <button className="inline-flex items-center gap-1 text-primary hover:underline">
-                    Abrir site <ExternalLink className="h-3.5 w-3.5" />
+                    {s.published ? "Publicado" : "Publicar"}
                   </button>
+                  <Link
+                    to="/loja/$slug"
+                    params={{ slug: s.slug }}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    Abrir site <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </div>
             ))}
