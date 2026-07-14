@@ -198,7 +198,7 @@ function Onboarding() {
                 onFile={onFile}
               />
             )}
-            {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
+            {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} copyWasCanceled={copyWasCanceled} regeneratingCopy={regeneratingCopy} onRegenerate={regenerateCopy} />}
           </fieldset>
 
           <div className="mt-10 flex items-center justify-between">
