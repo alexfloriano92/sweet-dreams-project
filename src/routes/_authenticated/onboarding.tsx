@@ -393,6 +393,7 @@ function StepLogo({
 
 function StepReview({
   storeName, plan, palette, setPalette, logoPreview, copy, generatingCopy,
+  copyWasCanceled, regeneratingCopy, onRegenerate,
 }: {
   storeName: string;
   plan: Plan;
@@ -401,6 +402,9 @@ function StepReview({
   logoPreview: string;
   copy: GeneratedCopy | null;
   generatingCopy: boolean;
+  copyWasCanceled: boolean;
+  regeneratingCopy: boolean;
+  onRegenerate: () => void;
 }) {
   const swatches = [
     { key: "primary" as const, label: "Primária", color: palette.primary },
