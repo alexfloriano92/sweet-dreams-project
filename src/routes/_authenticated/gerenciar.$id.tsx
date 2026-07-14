@@ -56,12 +56,12 @@ function Manage() {
     })();
   }, [id, navigate]);
 
-  const saveStore = async (patch: Partial<StoreRow>) => {
+  const saveStore = async (patch: Partial<StoreRow>): Promise<void> => {
     if (!store) return;
     setSavingStore(true);
     const { data, error } = await supabase.from("stores").update(patch).eq("id", store.id).select("*").maybeSingle();
     setSavingStore(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data) setStore(data as StoreRow);
     toast.success("Alterações salvas");
   };
