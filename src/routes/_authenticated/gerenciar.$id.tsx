@@ -549,19 +549,47 @@ function ImportCsvDialog({
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [stats, setStats] = useState<{ total: number; valid: number; toInsert: number; toUpdate: number; invalid: number } | null>(null);
 
   const parseFile = async (f: File) => {
     setFile(f);
     setErrors([]);
-    const text = await f.text();
-    const rows = parseCsv(text);
-    if (rows.length === 0) { setErrors(["Arquivo vazio."]); setPreview([]); return; }
-    const errs: string[] = [];
-    rows.forEach((r, i) => {
-      if (!r.title || !r.title.trim()) errs.push(`Linha ${i + 2}: título vazio`);
-    });
-    setErrors(errs);
-    setPreview(rows.slice(0, 50));
+    setStats(null);
+    setPreview([]);
+    setAnalyzing(true);
+    try {
+      const text = await f.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) { setErrors(["Arquivo vazio."]); return; }
+      const errs: string[] = [];
+      const validTitles: string[] = [];
+      rows.forEach((r, i) => {
+        if (!r.title || !r.title.trim()) errs.push(`Linha ${i + 2}: título vazio`);
+        else validTitles.push(r.title.trim());
+      });
+      setErrors(errs);
+      setPreview(rows.slice(0, 50));
+
+      let existingSet = new Set<string>();
+      if (validTitles.length > 0) {
+        const { data: existing } = await supabase
+          .from("vehicles").select("title").eq("store_id", storeId).in("title", validTitles);
+        existingSet = new Set((existing ?? []).map((e) => e.title));
+      }
+      const uniqueValid = Array.from(new Set(validTitles));
+      const toUpdate = uniqueValid.filter((t) => existingSet.has(t)).length;
+      const toInsert = uniqueValid.length - toUpdate;
+      setStats({
+        total: rows.length,
+        valid: validTitles.length,
+        toInsert,
+        toUpdate,
+        invalid: errs.length,
+      });
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const doImport = async () => {
@@ -656,6 +684,21 @@ function ImportCsvDialog({
             className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
           />
 
+          {analyzing && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Analisando arquivo…
+            </div>
+          )}
+
+          {stats && !analyzing && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <StatCard label="Linhas no arquivo" value={stats.total} />
+              <StatCard label="Serão inseridas" value={stats.toInsert} tone="success" />
+              <StatCard label="Serão atualizadas" value={stats.toUpdate} tone="info" />
+              <StatCard label="Ignoradas (inválidas)" value={stats.invalid} tone={stats.invalid > 0 ? "warn" : undefined} />
+            </div>
+          )}
+
           {errors.length > 0 && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
               {errors.slice(0, 5).map((e, i) => <div key={i}>{e}</div>)}
@@ -695,17 +738,35 @@ function ImportCsvDialog({
           <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface">Cancelar</button>
           <button
             onClick={doImport}
-            disabled={!file || importing || errors.length > 0}
+            disabled={!file || importing || analyzing || !stats || stats.valid === 0}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110 disabled:opacity-50"
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            Importar
+            {stats && stats.valid > 0
+              ? `Confirmar (${stats.toInsert} nova(s), ${stats.toUpdate} atualização(ões))`
+              : "Importar"}
           </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+function StatCard({ label, value, tone }: { label: string; value: number; tone?: "success" | "info" | "warn" }) {
+  const toneClass =
+    tone === "success" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+    : tone === "info" ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400"
+    : tone === "warn" ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+    : "border-border bg-surface/60 text-foreground";
+  return (
+    <div className={`rounded-lg border p-3 ${toneClass}`}>
+      <div className="text-[10px] font-medium uppercase tracking-wide opacity-80">{label}</div>
+      <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+
 
 function parseBool(v: unknown): boolean {
   const s = String(v ?? "").toLowerCase().trim();
