@@ -433,6 +433,29 @@ function StepReview({
       </div>
 
 
+      {/* Textos gerados por IA */}
+      <div className="mt-6 rounded-2xl border border-border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
+            <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
+          </div>
+          {generatingCopy && (
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando…
+            </span>
+          )}
+        </div>
+        {copy && (
+          <div className="mt-4 space-y-3 text-sm">
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Título:</span> <span className="font-semibold">{copy.hero_headline}</span></div>
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Subtítulo:</span> <span className="text-muted-foreground">{copy.hero_subheadline}</span></div>
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Slogan:</span> <span className="italic">{copy.tagline}</span></div>
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Sobre:</span> <span className="text-muted-foreground">{copy.about_text}</span></div>
+          </div>
+        )}
+      </div>
+
       {/* Preview simulado do site */}
       <div className="mt-6 rounded-2xl border border-border p-6">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Prévia do site</p>
@@ -440,7 +463,6 @@ function StepReview({
           className="mt-4 overflow-hidden rounded-xl border border-border"
           style={{ background: palette.neutral, color: "#fff" }}
         >
-          {/* Fake header */}
           <div
             className="flex items-center justify-between px-5 py-3"
             style={{ background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})` }}
@@ -456,16 +478,19 @@ function StepReview({
               WhatsApp
             </span>
           </div>
-          {/* Fake hero */}
           <div className="px-5 py-6">
-            <p className="font-display text-lg font-bold">Seminovos com procedência garantida</p>
-            <p className="mt-1 text-xs opacity-70">Financiamento em até 60x · Aceitamos seu usado</p>
+            <p className="font-display text-lg font-bold">
+              {copy?.hero_headline ?? "Seminovos com procedência garantida"}
+            </p>
+            <p className="mt-1 text-xs opacity-70">
+              {copy?.hero_subheadline ?? "Financiamento em até 60x · Aceitamos seu usado"}
+            </p>
             <div className="mt-4 flex gap-2">
               <span
                 className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
                 style={{ background: palette.primary, color: "#fff" }}
               >
-                Ver estoque
+                {copy?.cta_text ?? "Ver estoque"}
               </span>
               <span
                 className="rounded-full border px-3 py-1.5 text-[11px] font-semibold"
