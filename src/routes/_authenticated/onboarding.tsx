@@ -60,6 +60,8 @@ function Onboarding() {
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
   const [generatingCopy, setGeneratingCopy] = useState(false);
   const [copyProgressStep, setCopyProgressStep] = useState(0);
+  const [copyWasCanceled, setCopyWasCanceled] = useState(false);
+  const [regeneratingCopy, setRegeneratingCopy] = useState(false);
   const copyCanceledRef = useRef(false);
 
   useEffect(() => {
@@ -86,6 +88,7 @@ function Onboarding() {
     if (!generatingCopy) return;
     copyCanceledRef.current = true;
     setGeneratingCopy(false);
+    setCopyWasCanceled(true);
     setCopy({
       hero_headline: `${storeName}: seu próximo carro está aqui`,
       hero_subheadline: "Seminovos selecionados, revisados e com garantia.",
@@ -94,6 +97,21 @@ function Onboarding() {
       cta_text: "Ver estoque completo",
     });
     toast.info("Geração de textos cancelada. Você pode editar depois.");
+  };
+
+  const regenerateCopy = async () => {
+    if (!palette || !storeName || regeneratingCopy || generatingCopy) return;
+    setRegeneratingCopy(true);
+    try {
+      const c = await generateStoreCopy({ data: { storeName, style: palette.style } });
+      setCopy(c);
+      setCopyWasCanceled(false);
+      toast.success("Textos gerados com sucesso!");
+    } catch {
+      toast.error("Não foi possível gerar os textos. Tente novamente.");
+    } finally {
+      setRegeneratingCopy(false);
+    }
   };
 
   useEffect(() => {
