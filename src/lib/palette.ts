@@ -21,32 +21,67 @@ export async function extractPaletteFromFile(file: File): Promise<Palette> {
     ctx.drawImage(img, 0, 0, size, size);
     const data = ctx.getImageData(0, 0, size, size).data;
 
-    const buckets = new Map<string, { r: number; g: number; b: number; count: number }>();
+    type Bucket = { r: number; g: number; b: number; count: number; score: number };
+    const vivid = new Map<string, Bucket>();
+    const neutrals = new Map<string, Bucket>();
+
     for (let i = 0; i < data.length; i += 4) {
       const a = data[i + 3];
       if (a < 200) continue;
       const r = data[i], g = data[i + 1], b = data[i + 2];
-      // Skip near-white/near-black to catch brand colors
       const max = Math.max(r, g, b), min = Math.min(r, g, b);
       const lightness = (max + min) / 2;
-      const saturation = max === min ? 0 : (max - min) / (255 - Math.abs(2 * lightness - 255) || 1);
-      // Quantize
+      const delta = max - min;
+      const saturation = delta === 0 ? 0 : delta / (255 - Math.abs(2 * lightness - 255) || 1);
+
+      // Split neutral (grays/black/white) from vivid pixels; only vivid pixels
+      // in a mid-luminance sweet spot contribute to "score" for primary picking.
       const key = `${r >> 5}-${g >> 5}-${b >> 5}`;
-      const entry = buckets.get(key) || { r: 0, g: 0, b: 0, count: 0 };
+      const isNeutralPx = saturation < 0.15;
+      const map = isNeutralPx ? neutrals : vivid;
+      const entry = map.get(key) || { r: 0, g: 0, b: 0, count: 0, score: 0 };
       entry.r += r; entry.g += g; entry.b += b; entry.count += 1;
-      // Weight saturated pixels more
-      if (saturation > 0.3 && lightness > 30 && lightness < 230) entry.count += 3;
-      buckets.set(key, entry);
+
+      if (!isNeutralPx && lightness >= 40 && lightness <= 220 && saturation >= 0.35) {
+        // Peak weight around L=128 and S=1; heavily deprioritizes dark/dull edges.
+        const lightWeight = 1 - Math.abs(lightness - 128) / 128;
+        entry.score += saturation * lightWeight;
+      }
+      map.set(key, entry);
     }
 
-    const sorted = [...buckets.values()]
-      .map((e) => ({ r: e.r / e.count, g: e.g / e.count, b: e.b / e.count, count: e.count }))
-      .sort((a, b) => b.count - a.count);
+    const toRGB = (b: Bucket): RGB => ({
+      r: b.r / b.count, g: b.g / b.count, b: b.b / b.count, count: b.count,
+    });
 
-    const primary = pickColorful(sorted) ?? sorted[0];
-    const secondary = pickDistinct(sorted, primary) ?? shift(primary, 30);
-    const accent = complement(primary);
-    const neutral = sorted.find((c) => isNeutral(c)) ?? { r: 20, g: 20, b: 24, count: 1 };
+    const vividSorted = [...vivid.values()]
+      .filter((b) => b.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(toRGB);
+
+    const anySorted = [...vivid.values(), ...neutrals.values()]
+      .sort((a, b) => b.count - a.count)
+      .map(toRGB);
+
+    const primary = vividSorted[0] ?? pickColorful(anySorted) ?? anySorted[0];
+    const secondary =
+      vividSorted.find((c) => Math.hypot(c.r - primary.r, c.g - primary.g, c.b - primary.b) > 80) ??
+      pickDistinct(anySorted, primary) ??
+      shift(primary, 30);
+    const accent =
+      vividSorted.find(
+        (c) =>
+          c !== primary &&
+          c !== secondary &&
+          Math.hypot(c.r - primary.r, c.g - primary.g, c.b - primary.b) > 100 &&
+          Math.hypot(c.r - secondary.r, c.g - secondary.g, c.b - secondary.b) > 60,
+      ) ?? complement(primary);
+
+    const neutralSorted = [...neutrals.values()].sort((a, b) => b.count - a.count).map(toRGB);
+    const neutral =
+      neutralSorted.find(isNeutral) ??
+      anySorted.find(isNeutral) ??
+      { r: 20, g: 20, b: 24, count: 1 };
 
     return {
       primary: rgb(primary),
