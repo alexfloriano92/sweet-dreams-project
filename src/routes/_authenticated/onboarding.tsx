@@ -55,6 +55,7 @@ function Onboarding() {
 
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
   const [generatingCopy, setGeneratingCopy] = useState(false);
+  const [copyProgressStep, setCopyProgressStep] = useState(0);
 
   useEffect(() => {
     if (step === 3 && palette && storeName && !copy && !generatingCopy) {
@@ -65,6 +66,13 @@ function Onboarding() {
         .finally(() => setGeneratingCopy(false));
     }
   }, [step, palette, storeName, copy, generatingCopy]);
+
+  useEffect(() => {
+    if (!generatingCopy) return;
+    setCopyProgressStep(0);
+    const interval = setInterval(() => setCopyProgressStep((s) => (s + 1) % 3), 900);
+    return () => clearInterval(interval);
+  }, [generatingCopy]);
 
   const finish = async () => {
     if (!file || !palette || !storeName) return;
@@ -131,6 +139,9 @@ function Onboarding() {
         </div>
 
         <div className="rounded-3xl border border-border bg-card p-8 shadow-elegant md:p-12">
+          {step === 3 && generatingCopy && (
+            <CopyProgress step={copyProgressStep} />
+          )}
           <fieldset disabled={generatingCopy} className="border-0 p-0 m-0 min-w-0 transition-opacity disabled:opacity-60">
             {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
             {step === 1 && <StepStoreName name={storeName} setName={setStoreName} slug={slug} />}
@@ -438,16 +449,9 @@ function StepReview({
 
       {/* Textos gerados por IA */}
       <div className="mt-6 rounded-2xl border border-border p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
-            <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
-          </div>
-          {generatingCopy && (
-            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando…
-            </span>
-          )}
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
+          <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
         </div>
         {copy && (
           <div className="mt-4 space-y-3 text-sm">
@@ -509,3 +513,31 @@ function StepReview({
   );
 }
 
+function CopyProgress({ step }: { step: number }) {
+  const steps = ["Analisando identidade", "Criando textos", "Finalizando copy"];
+  return (
+    <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+      <div className="flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">Gerando textos com IA...</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {steps.map((label, i) => (
+              <span
+                key={label}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors ${
+                  i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {i < step && <Check className="h-3 w-3" />}
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
