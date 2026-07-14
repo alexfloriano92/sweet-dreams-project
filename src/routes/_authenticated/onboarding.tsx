@@ -331,13 +331,15 @@ function StepLogo({
 }
 
 function StepReview({
-  storeName, plan, palette, setPalette, logoPreview,
+  storeName, plan, palette, setPalette, logoPreview, copy, generatingCopy,
 }: {
   storeName: string;
   plan: Plan;
   palette: Palette;
   setPalette: (updater: (p: Palette | null) => Palette | null) => void;
   logoPreview: string;
+  copy: GeneratedCopy | null;
+  generatingCopy: boolean;
 }) {
   const swatches = [
     { key: "primary" as const, label: "Primária", color: palette.primary },
