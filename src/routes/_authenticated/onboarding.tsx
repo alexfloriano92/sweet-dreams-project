@@ -131,20 +131,22 @@ function Onboarding() {
         </div>
 
         <div className="rounded-3xl border border-border bg-card p-8 shadow-elegant md:p-12">
-          {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
-          {step === 1 && <StepStoreName name={storeName} setName={setStoreName} slug={slug} />}
-          {step === 2 && (
-            <StepLogo
-              file={file} logoPreview={logoPreview} palette={palette} analyzing={analyzing}
-              onFile={onFile}
-            />
-          )}
-          {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
+          <fieldset disabled={generatingCopy} className="border-0 p-0 m-0 min-w-0 transition-opacity disabled:opacity-60">
+            {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
+            {step === 1 && <StepStoreName name={storeName} setName={setStoreName} slug={slug} />}
+            {step === 2 && (
+              <StepLogo
+                file={file} logoPreview={logoPreview} palette={palette} analyzing={analyzing}
+                onFile={onFile}
+              />
+            )}
+            {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
+          </fieldset>
 
           <div className="mt-10 flex items-center justify-between">
             <button
               onClick={() => setStep((s) => Math.max(0, s - 1) as typeof step)}
-              disabled={step === 0}
+              disabled={step === 0 || generatingCopy}
               className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium disabled:opacity-40"
             >
               <ArrowLeft className="h-4 w-4" /> Voltar
@@ -152,7 +154,7 @@ function Onboarding() {
             {step < 3 ? (
               <button
                 onClick={() => setStep((s) => (s + 1) as typeof step)}
-                disabled={!canNext}
+                disabled={!canNext || generatingCopy}
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-elegant transition hover:brightness-110 disabled:opacity-50"
               >
                 Continuar <ArrowRight className="h-4 w-4" />
