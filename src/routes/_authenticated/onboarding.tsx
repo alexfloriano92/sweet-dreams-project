@@ -500,9 +500,25 @@ function StepReview({
 
       {/* Textos gerados por IA */}
       <div className="mt-6 rounded-2xl border border-border p-6">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
-          <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
+            <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
+            {copyWasCanceled && !regeneratingCopy && (
+              <p className="mt-1 text-xs text-muted-foreground">Você cancelou a geração — usando textos padrão.</p>
+            )}
+          </div>
+          {(copyWasCanceled || regeneratingCopy) && !generatingCopy && (
+            <button
+              type="button"
+              onClick={onRegenerate}
+              disabled={regeneratingCopy}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {regeneratingCopy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {regeneratingCopy ? "Gerando…" : "Gerar novamente"}
+            </button>
+          )}
         </div>
         {copy && (
           <div className="mt-4 space-y-3 text-sm">
