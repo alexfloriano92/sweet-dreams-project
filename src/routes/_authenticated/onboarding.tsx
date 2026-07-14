@@ -316,19 +316,35 @@ function StepLogo({
 }
 
 function StepReview({
-  storeName, plan, palette, logoPreview,
-}: { storeName: string; plan: Plan; palette: Palette; logoPreview: string }) {
+  storeName, plan, palette, setPalette, logoPreview,
+}: {
+  storeName: string;
+  plan: Plan;
+  palette: Palette;
+  setPalette: (updater: (p: Palette | null) => Palette | null) => void;
+  logoPreview: string;
+}) {
   const swatches = [
-    { label: "Primária", color: palette.primary },
-    { label: "Secundária", color: palette.secondary },
-    { label: "Destaque", color: palette.accent },
-    { label: "Neutra", color: palette.neutral },
-  ] as const;
+    { key: "primary" as const, label: "Primária", color: palette.primary },
+    { key: "secondary" as const, label: "Secundária", color: palette.secondary },
+    { key: "accent" as const, label: "Destaque", color: palette.accent },
+    { key: "neutral" as const, label: "Neutra", color: palette.neutral },
+  ];
+
+  const isHex = (v: string) => /^#[0-9a-fA-F]{6}$/.test(v);
+  const updateColor = (key: keyof Palette, value: string) => {
+    setPalette((p) => (p ? { ...p, [key]: value } : p));
+  };
+  const resetOne = (key: "primary" | "secondary" | "accent" | "neutral") => {
+    // no-op; user can re-upload if needed. Reset removed for simplicity.
+    void key;
+  };
+  void resetOne;
 
   return (
     <div>
       <h2 className="font-display text-3xl font-bold">Tudo pronto!</h2>
-      <p className="mt-2 text-muted-foreground">Confira a identidade visual antes de gerar seu site.</p>
+      <p className="mt-2 text-muted-foreground">Ajuste as cores se quiser — a prévia atualiza em tempo real.</p>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         {/* Loja */}
@@ -355,27 +371,50 @@ function StepReview({
         </div>
       </div>
 
-      {/* Paleta */}
+      {/* Paleta editável */}
       <div className="mt-6 rounded-2xl border border-border p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Paleta extraída</p>
-            <p className="mt-1 font-display text-lg font-semibold">4 cores da sua marca</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Paleta editável</p>
+            <p className="mt-1 font-display text-lg font-semibold">Personalize as 4 cores da sua marca</p>
           </div>
-          <span className="hidden text-xs text-muted-foreground md:inline">Gerada automaticamente pela IA</span>
+          <span className="hidden text-xs text-muted-foreground md:inline">Clique no swatch ou edite o hex</span>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {swatches.map(({ label, color }) => (
-            <div key={label} className="overflow-hidden rounded-xl border border-border">
-              <div className="aspect-[4/3]" style={{ background: color }} />
-              <div className="px-3 py-2">
-                <p className="text-sm font-semibold">{label}</p>
-                <p className="font-mono text-xs uppercase text-muted-foreground">{color}</p>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {swatches.map(({ key, label, color }) => {
+            const valid = isHex(color);
+            return (
+              <div key={key} className="overflow-hidden rounded-xl border border-border">
+                <label className="relative block aspect-[4/3] cursor-pointer" style={{ background: valid ? color : "#000" }}>
+                  <input
+                    type="color"
+                    value={valid ? color : "#000000"}
+                    onChange={(e) => updateColor(key, e.target.value)}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label={`Escolher cor ${label}`}
+                  />
+                </label>
+                <div className="px-3 py-2 space-y-1">
+                  <p className="text-sm font-semibold">{label}</p>
+                  <input
+                    type="text"
+                    value={color}
+                    onChange={(e) => {
+                      const v = e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`;
+                      updateColor(key, v.slice(0, 7));
+                    }}
+                    spellCheck={false}
+                    className={`w-full rounded-md border bg-background px-2 py-1 font-mono text-xs uppercase outline-none focus:border-primary ${
+                      valid ? "border-border text-muted-foreground" : "border-destructive text-destructive"
+                    }`}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
+
 
       {/* Preview simulado do site */}
       <div className="mt-6 rounded-2xl border border-border p-6">
