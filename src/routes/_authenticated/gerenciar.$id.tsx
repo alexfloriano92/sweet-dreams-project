@@ -542,34 +542,70 @@ function buildVehiclesCsv(rows: VehicleRow[]): string {
 
 
 
+type CsvRow = Record<string, string>;
+type RowError = { line: number; message: string };
+
+function validateRows(rows: CsvRow[]): { errors: RowError[]; invalidIdx: Set<number>; validTitles: string[] } {
+  const errors: RowError[] = [];
+  const invalidIdx = new Set<number>();
+  const validTitles: string[] = [];
+  const seenTitles = new Map<string, number>();
+  rows.forEach((r, i) => {
+    const line = i + 2;
+    const title = (r.title ?? "").trim();
+    if (!title) {
+      errors.push({ line, message: "Título vazio" });
+      invalidIdx.add(i);
+      return;
+    }
+    if (r.year && String(r.year).trim() && !/^\d{2,4}$/.test(String(r.year).trim())) {
+      errors.push({ line, message: `Ano inválido: "${r.year}"` });
+      invalidIdx.add(i);
+      return;
+    }
+    if (r.price && String(r.price).trim()) {
+      const p = parseFloat(String(r.price).replace(/\./g, "").replace(",", "."));
+      if (Number.isNaN(p)) {
+        errors.push({ line, message: `Preço inválido: "${r.price}"` });
+        invalidIdx.add(i);
+        return;
+      }
+    }
+    if (r.km && String(r.km).trim() && !/^\d[\d.\s]*$/.test(String(r.km).trim())) {
+      errors.push({ line, message: `KM inválido: "${r.km}"` });
+      invalidIdx.add(i);
+      return;
+    }
+    const prev = seenTitles.get(title);
+    if (prev !== undefined) {
+      errors.push({ line, message: `Título duplicado no arquivo (também na linha ${prev + 2})` });
+      invalidIdx.add(i);
+      return;
+    }
+    seenTitles.set(title, i);
+    validTitles.push(title);
+  });
+  return { errors, invalidIdx, validTitles };
+}
+
 function ImportCsvDialog({
   storeId, onClose, onDone,
 }: { storeId: string; onClose: () => void; onDone: () => void }) {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<Record<string, string>[]>([]);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [rows, setRows] = useState<CsvRow[]>([]);
+  const [errors, setErrors] = useState<RowError[]>([]);
+  const [invalidIdx, setInvalidIdx] = useState<Set<number>>(new Set());
   const [importing, setImporting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [stats, setStats] = useState<{ total: number; valid: number; toInsert: number; toUpdate: number; invalid: number } | null>(null);
 
-  const parseFile = async (f: File) => {
-    setFile(f);
-    setErrors([]);
-    setStats(null);
-    setPreview([]);
+  const analyze = async (currentRows: CsvRow[]) => {
     setAnalyzing(true);
     try {
-      const text = await f.text();
-      const rows = parseCsv(text);
-      if (rows.length === 0) { setErrors(["Arquivo vazio."]); return; }
-      const errs: string[] = [];
-      const validTitles: string[] = [];
-      rows.forEach((r, i) => {
-        if (!r.title || !r.title.trim()) errs.push(`Linha ${i + 2}: título vazio`);
-        else validTitles.push(r.title.trim());
-      });
+      const { errors: errs, invalidIdx: idxSet, validTitles } = validateRows(currentRows);
       setErrors(errs);
-      setPreview(rows.slice(0, 50));
+      setInvalidIdx(idxSet);
 
       let existingSet = new Set<string>();
       if (validTitles.length > 0) {
@@ -577,29 +613,54 @@ function ImportCsvDialog({
           .from("vehicles").select("title").eq("store_id", storeId).in("title", validTitles);
         existingSet = new Set((existing ?? []).map((e) => e.title));
       }
-      const uniqueValid = Array.from(new Set(validTitles));
-      const toUpdate = uniqueValid.filter((t) => existingSet.has(t)).length;
-      const toInsert = uniqueValid.length - toUpdate;
+      const toUpdate = validTitles.filter((t) => existingSet.has(t)).length;
+      const toInsert = validTitles.length - toUpdate;
       setStats({
-        total: rows.length,
+        total: currentRows.length,
         valid: validTitles.length,
         toInsert,
         toUpdate,
-        invalid: errs.length,
+        invalid: idxSet.size,
       });
+      setDirty(false);
     } finally {
       setAnalyzing(false);
     }
   };
 
+  const parseFile = async (f: File) => {
+    setFile(f);
+    setStats(null);
+    setErrors([]);
+    setInvalidIdx(new Set());
+    setRows([]);
+    const text = await f.text();
+    const parsed = parseCsv(text) as CsvRow[];
+    if (parsed.length === 0) {
+      setErrors([{ line: 1, message: "Arquivo vazio." }]);
+      return;
+    }
+    setRows(parsed);
+    await analyze(parsed);
+  };
+
+  const updateCell = (idx: number, col: string, val: string) => {
+    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [col]: val } : r)));
+    setDirty(true);
+  };
+
+  const removeRow = (idx: number) => {
+    setRows((prev) => prev.filter((_, i) => i !== idx));
+    setDirty(true);
+  };
+
   const doImport = async () => {
-    if (!file) return;
+    if (rows.length === 0) return;
     setImporting(true);
     try {
-      const text = await file.text();
-      const rows = parseCsv(text);
+      const { invalidIdx: idxSet } = validateRows(rows);
       const payload = rows
-        .filter((r) => r.title && r.title.trim())
+        .filter((_, i) => !idxSet.has(i))
         .map((r) => ({
           store_id: storeId,
           title: r.title.trim(),
@@ -619,7 +680,6 @@ function ImportCsvDialog({
 
       if (payload.length === 0) { toast.error("Nenhuma linha válida."); return; }
 
-      // Upsert-by-title strategy: fetch existing titles for this store and update, insert the rest.
       const titles = payload.map((p) => p.title);
       const { data: existing } = await supabase
         .from("vehicles").select("id,title").eq("store_id", storeId).in("title", titles);
@@ -655,9 +715,30 @@ function ImportCsvDialog({
     URL.revokeObjectURL(url);
   };
 
+  const downloadInvalid = () => {
+    const invalidRows = rows.filter((_, i) => invalidIdx.has(i));
+    if (invalidRows.length === 0) return;
+    const header = [...CSV_COLUMNS, "_erro"].join(",");
+    const errByIdx = new Map(errors.map((e) => [e.line - 2, e.message] as const));
+    const body = Array.from(invalidIdx).sort((a, b) => a - b).map((i) => {
+      const r = rows[i];
+      const cells = CSV_COLUMNS.map((c) => csvEscape(r[c])).concat(csvEscape(errByIdx.get(i) ?? ""));
+      return cells.join(",");
+    }).join("\n");
+    const blob = new Blob([header + "\n" + body + "\n"], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "linhas-invalidas.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const validPreview = rows.filter((_, i) => !invalidIdx.has(i)).slice(0, 20);
+  const invalidList = Array.from(invalidIdx).sort((a, b) => a - b);
+  const errByIdx = new Map(errors.map((e) => [e.line - 2, e.message] as const));
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Importar veículos via CSV</DialogTitle>
         </DialogHeader>
@@ -699,14 +780,69 @@ function ImportCsvDialog({
             </div>
           )}
 
-          {errors.length > 0 && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
-              {errors.slice(0, 5).map((e, i) => <div key={i}>{e}</div>)}
-              {errors.length > 5 && <div>… e mais {errors.length - 5} erro(s)</div>}
+          {dirty && rows.length > 0 && (
+            <div className="flex items-center justify-between rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <span>Você editou linhas. Revalide para atualizar as contagens.</span>
+              <button
+                onClick={() => analyze(rows)}
+                disabled={analyzing}
+                className="rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+              >
+                Revalidar
+              </button>
             </div>
           )}
 
-          {preview.length > 0 && (
+          {invalidList.length > 0 && (
+            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-destructive">
+                  {invalidList.length} linha(s) ignorada(s) — corrija abaixo e revalide
+                </p>
+                <button
+                  onClick={downloadInvalid}
+                  className="inline-flex items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                >
+                  <Download className="h-3 w-3" /> Baixar inválidas
+                </button>
+              </div>
+              <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                {invalidList.map((idx) => {
+                  const r = rows[idx];
+                  const msg = errByIdx.get(idx) ?? "Linha inválida";
+                  return (
+                    <div key={idx} className="rounded-lg border border-destructive/30 bg-background/60 p-3">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-destructive">
+                          Linha {idx + 2} · {msg}
+                        </span>
+                        <button
+                          onClick={() => removeRow(idx)}
+                          className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface"
+                        >
+                          Remover linha
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {(["title","brand","model","year","km","price","fuel","transmission"] as const).map((col) => (
+                          <label key={col} className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+                            <span className="uppercase tracking-wide">{col}</span>
+                            <input
+                              value={r[col] ?? ""}
+                              onChange={(e) => updateCell(idx, col, e.target.value)}
+                              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {validPreview.length > 0 && (
             <div className="max-h-64 overflow-auto rounded-lg border border-border">
               <table className="w-full text-xs">
                 <thead className="bg-surface text-left">
@@ -716,7 +852,7 @@ function ImportCsvDialog({
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.map((r, i) => (
+                  {validPreview.map((r, i) => (
                     <tr key={i} className="border-t border-border">
                       <td className="p-2">{r.title}</td>
                       <td className="p-2">{r.brand}</td>
@@ -728,7 +864,7 @@ function ImportCsvDialog({
                 </tbody>
               </table>
               <p className="border-t border-border p-2 text-[11px] text-muted-foreground">
-                Mostrando {preview.length} linha(s) de pré-visualização.
+                Mostrando {validPreview.length} linha(s) válida(s) de pré-visualização.
               </p>
             </div>
           )}
@@ -738,19 +874,22 @@ function ImportCsvDialog({
           <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface">Cancelar</button>
           <button
             onClick={doImport}
-            disabled={!file || importing || analyzing || !stats || stats.valid === 0}
+            disabled={!file || importing || analyzing || dirty || !stats || stats.valid === 0}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110 disabled:opacity-50"
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            {stats && stats.valid > 0
-              ? `Confirmar (${stats.toInsert} nova(s), ${stats.toUpdate} atualização(ões))`
-              : "Importar"}
+            {dirty
+              ? "Revalide antes de importar"
+              : stats && stats.valid > 0
+                ? `Confirmar (${stats.toInsert} nova(s), ${stats.toUpdate} atualização(ões))`
+                : "Importar"}
           </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function StatCard({ label, value, tone }: { label: string; value: number; tone?: "success" | "info" | "warn" }) {
   const toneClass =
