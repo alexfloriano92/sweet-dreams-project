@@ -2,8 +2,10 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { Car, MapPin, Phone, MessageCircle, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Car, MapPin, Phone, MessageCircle, Sparkles, Search, SlidersHorizontal, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+
 
 const SlugInput = z.object({ slug: z.string().min(1) });
 
@@ -179,51 +181,8 @@ function PublicStore() {
       </section>
 
       {/* Estoque */}
-      <section id="estoque" className="mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-10 flex items-end justify-between">
-          <div>
-            <h2 className="text-3xl font-bold md:text-4xl">Nosso estoque</h2>
-            <p className="mt-2 text-neutral-600">{vehicles.length} veículo(s) disponíveis</p>
-          </div>
-        </div>
+      <StockSection vehicles={vehicles} primary={primary} accent={accent} />
 
-        {vehicles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-16 text-center">
-            <p className="text-neutral-600">Nenhum veículo cadastrado ainda. Volte em breve!</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {vehicles.map((v) => {
-              const photo = Array.isArray(v.photos) ? v.photos[0] : null;
-              return (
-                <article key={v.id} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="aspect-[4/3] w-full bg-neutral-100">
-                    {photo ? (
-                      <img src={photo} alt={v.title} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="grid h-full place-items-center text-neutral-400"><Car className="h-12 w-12" /></div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold">{v.title}</h3>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      {[v.brand, v.model, v.year].filter(Boolean).join(" • ")}
-                    </p>
-                    <div className="mt-4 flex items-end justify-between">
-                      {v.price != null && (
-                        <p className="text-2xl font-bold" style={{ color: primary }}>
-                          R$ {Number(v.price).toLocaleString("pt-BR")}
-                        </p>
-                      )}
-                      {v.km != null && <p className="text-xs text-neutral-500">{Number(v.km).toLocaleString("pt-BR")} km</p>}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
 
       {/* Sobre */}
       {store.about_text && (
@@ -258,3 +217,171 @@ function PublicStore() {
     </div>
   );
 }
+
+function StockSection({ vehicles, primary, accent }: { vehicles: any[]; primary: string; accent: string }) {
+  const [q, setQ] = useState("");
+  const [brand, setBrand] = useState("");
+  const [fuel, setFuel] = useState("");
+  const [minYear, setMinYear] = useState("");
+  const [maxYear, setMaxYear] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const brands = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => v.brand).filter(Boolean))).sort() as string[],
+    [vehicles]
+  );
+  const fuels = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => v.fuel).filter(Boolean))).sort() as string[],
+    [vehicles]
+  );
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    const minY = minYear ? parseInt(minYear, 10) : null;
+    const maxY = maxYear ? parseInt(maxYear, 10) : null;
+    const minP = minPrice ? parseFloat(minPrice.replace(/\./g, "").replace(",", ".")) : null;
+    const maxP = maxPrice ? parseFloat(maxPrice.replace(/\./g, "").replace(",", ".")) : null;
+
+    return vehicles.filter((v) => {
+      if (term) {
+        const hay = [v.title, v.brand, v.model, v.color].filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
+      if (brand && v.brand !== brand) return false;
+      if (fuel && v.fuel !== fuel) return false;
+      if (minY != null && (v.year == null || v.year < minY)) return false;
+      if (maxY != null && (v.year == null || v.year > maxY)) return false;
+      if (minP != null && (v.price == null || Number(v.price) < minP)) return false;
+      if (maxP != null && (v.price == null || Number(v.price) > maxP)) return false;
+      return true;
+    });
+  }, [vehicles, q, brand, fuel, minYear, maxYear, minPrice, maxPrice]);
+
+  const anyActive = q || brand || fuel || minYear || maxYear || minPrice || maxPrice;
+
+  const clear = () => {
+    setQ(""); setBrand(""); setFuel(""); setMinYear(""); setMaxYear(""); setMinPrice(""); setMaxPrice("");
+  };
+
+  const fieldCls = "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400";
+
+  return (
+    <section id="estoque" className="mx-auto max-w-7xl px-6 py-20">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold md:text-4xl">Nosso estoque</h2>
+          <p className="mt-2 text-neutral-600">
+            {filtered.length} de {vehicles.length} veículo(s)
+          </p>
+        </div>
+      </div>
+
+      {/* Search + filter toggle */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por marca, modelo, cor…"
+            className="w-full rounded-full border border-neutral-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-neutral-400"
+          />
+        </div>
+        <button
+          onClick={() => setShowFilters((s) => !s)}
+          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-neutral-50"
+        >
+          <SlidersHorizontal className="h-4 w-4" /> Filtros
+        </button>
+        {anyActive && (
+          <button
+            onClick={clear}
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900"
+          >
+            <X className="h-4 w-4" /> Limpar
+          </button>
+        )}
+      </div>
+
+      {showFilters && (
+        <div className="mb-8 grid gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Marca</span>
+            <select value={brand} onChange={(e) => setBrand(e.target.value)} className={fieldCls}>
+              <option value="">Todas</option>
+              {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Combustível</span>
+            <select value={fuel} onChange={(e) => setFuel(e.target.value)} className={fieldCls}>
+              <option value="">Todos</option>
+              {fuels.map((f) => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </label>
+          <div>
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Ano</span>
+            <div className="flex gap-2">
+              <input inputMode="numeric" placeholder="De" value={minYear} onChange={(e) => setMinYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className={fieldCls} />
+              <input inputMode="numeric" placeholder="Até" value={maxYear} onChange={(e) => setMaxYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className={fieldCls} />
+            </div>
+          </div>
+          <div>
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Preço (R$)</span>
+            <div className="flex gap-2">
+              <input inputMode="decimal" placeholder="Mín" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className={fieldCls} />
+              <input inputMode="decimal" placeholder="Máx" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className={fieldCls} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {vehicles.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-16 text-center">
+          <p className="text-neutral-600">Nenhum veículo cadastrado ainda. Volte em breve!</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-16 text-center">
+          <p className="text-neutral-600">Nenhum veículo encontrado com esses filtros.</p>
+          <button onClick={clear} className="mt-4 rounded-full px-5 py-2 text-sm font-semibold text-white" style={{ background: accent }}>
+            Limpar filtros
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((v) => {
+            const photo = Array.isArray(v.photos) ? v.photos[0] : null;
+            return (
+              <article key={v.id} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <div className="aspect-[4/3] w-full bg-neutral-100">
+                  {photo ? (
+                    <img src={photo} alt={v.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="grid h-full place-items-center text-neutral-400"><Car className="h-12 w-12" /></div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="text-lg font-bold">{v.title}</h3>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {[v.brand, v.model, v.year, v.fuel].filter(Boolean).join(" • ")}
+                  </p>
+                  <div className="mt-4 flex items-end justify-between">
+                    {v.price != null && (
+                      <p className="text-2xl font-bold" style={{ color: primary }}>
+                        R$ {Number(v.price).toLocaleString("pt-BR")}
+                      </p>
+                    )}
+                    {v.km != null && <p className="text-xs text-neutral-500">{Number(v.km).toLocaleString("pt-BR")} km</p>}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+

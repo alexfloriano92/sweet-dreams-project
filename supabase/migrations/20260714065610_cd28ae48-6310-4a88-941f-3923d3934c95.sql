@@ -1,0 +1,1 @@
+ALTER FUNCTION public.jsonb_diff(jsonb, jsonb) SET search_path = public;
