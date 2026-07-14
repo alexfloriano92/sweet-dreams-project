@@ -738,11 +738,13 @@ function ImportCsvDialog({
           <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface">Cancelar</button>
           <button
             onClick={doImport}
-            disabled={!file || importing || errors.length > 0}
+            disabled={!file || importing || analyzing || !stats || stats.valid === 0}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110 disabled:opacity-50"
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            Importar
+            {stats && stats.valid > 0
+              ? `Confirmar (${stats.toInsert} nova(s), ${stats.toUpdate} atualização(ões))`
+              : "Importar"}
           </button>
         </DialogFooter>
       </DialogContent>
