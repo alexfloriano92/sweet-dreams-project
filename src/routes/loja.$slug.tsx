@@ -181,51 +181,8 @@ function PublicStore() {
       </section>
 
       {/* Estoque */}
-      <section id="estoque" className="mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-10 flex items-end justify-between">
-          <div>
-            <h2 className="text-3xl font-bold md:text-4xl">Nosso estoque</h2>
-            <p className="mt-2 text-neutral-600">{vehicles.length} veículo(s) disponíveis</p>
-          </div>
-        </div>
+      <StockSection vehicles={vehicles} primary={primary} accent={accent} />
 
-        {vehicles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-16 text-center">
-            <p className="text-neutral-600">Nenhum veículo cadastrado ainda. Volte em breve!</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {vehicles.map((v) => {
-              const photo = Array.isArray(v.photos) ? v.photos[0] : null;
-              return (
-                <article key={v.id} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="aspect-[4/3] w-full bg-neutral-100">
-                    {photo ? (
-                      <img src={photo} alt={v.title} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="grid h-full place-items-center text-neutral-400"><Car className="h-12 w-12" /></div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold">{v.title}</h3>
-                    <p className="mt-1 text-sm text-neutral-500">
-                      {[v.brand, v.model, v.year].filter(Boolean).join(" • ")}
-                    </p>
-                    <div className="mt-4 flex items-end justify-between">
-                      {v.price != null && (
-                        <p className="text-2xl font-bold" style={{ color: primary }}>
-                          R$ {Number(v.price).toLocaleString("pt-BR")}
-                        </p>
-                      )}
-                      {v.km != null && <p className="text-xs text-neutral-500">{Number(v.km).toLocaleString("pt-BR")} km</p>}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
 
       {/* Sobre */}
       {store.about_text && (
