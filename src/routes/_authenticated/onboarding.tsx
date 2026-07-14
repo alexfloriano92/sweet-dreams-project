@@ -538,7 +538,7 @@ function StepReview({
   );
 }
 
-function CopyProgress({ step }: { step: number }) {
+function CopyProgress({ step, onCancel }: { step: number; onCancel: () => void }) {
   const steps = ["Analisando identidade", "Criando textos", "Finalizando copy"];
   return (
     <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
@@ -562,6 +562,13 @@ function CopyProgress({ step }: { step: number }) {
             ))}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Cancelar
+        </button>
       </div>
     </div>
   );
