@@ -7,6 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { extractPaletteFromFile, type Palette } from "@/lib/palette";
 import { generateStoreCopy, type GeneratedCopy } from "@/lib/generate-copy.functions";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
