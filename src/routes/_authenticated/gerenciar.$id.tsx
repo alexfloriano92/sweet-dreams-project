@@ -599,6 +599,11 @@ function ImportCsvDialog({
   const [analyzing, setAnalyzing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [stats, setStats] = useState<{ total: number; valid: number; toInsert: number; toUpdate: number; invalid: number } | null>(null);
+  const [mergeInfo, setMergeInfo] = useState<{ reused: number; changed: number; added: number; fileName: string } | null>(null);
+  const mergeInputRef = useRef<HTMLInputElement | null>(null);
+
+  const serializeRow = (r: CsvRow) =>
+    CSV_COLUMNS.map((c) => (r[c] ?? "").toString().trim()).join("\u0001");
 
   const analyze = async (currentRows: CsvRow[]) => {
     setAnalyzing(true);
@@ -634,6 +639,7 @@ function ImportCsvDialog({
     setErrors([]);
     setInvalidIdx(new Set());
     setRows([]);
+    setMergeInfo(null);
     const text = await f.text();
     const parsed = parseCsv(text) as CsvRow[];
     if (parsed.length === 0) {
@@ -642,6 +648,46 @@ function ImportCsvDialog({
     }
     setRows(parsed);
     await analyze(parsed);
+  };
+
+  const mergeFile = async (f: File) => {
+    if (rows.length === 0) { await parseFile(f); return; }
+    const text = await f.text();
+    const parsed = parseCsv(text) as CsvRow[];
+    if (parsed.length === 0) { toast.error("Arquivo vazio."); return; }
+
+    const idxByTitle = new Map<string, number>();
+    rows.forEach((r, i) => {
+      const t = (r.title ?? "").trim();
+      if (t) idxByTitle.set(t, i);
+    });
+
+    const merged = rows.slice();
+    let reused = 0, changed = 0, added = 0;
+    for (const nr of parsed) {
+      const t = (nr.title ?? "").trim();
+      if (!t) { merged.push(nr); added++; continue; }
+      const existingIdx = idxByTitle.get(t);
+      if (existingIdx !== undefined) {
+        const before = serializeRow(merged[existingIdx]);
+        const after = serializeRow(nr);
+        if (before === after) {
+          reused++;
+        } else {
+          merged[existingIdx] = nr;
+          changed++;
+        }
+      } else {
+        merged.push(nr);
+        idxByTitle.set(t, merged.length - 1);
+        added++;
+      }
+    }
+
+    setRows(merged);
+    setMergeInfo({ reused, changed, added, fileName: f.name });
+    toast.success(`Mesclado: ${reused} reaproveitada(s), ${changed} atualizada(s), ${added} nova(s)`);
+    await analyze(merged);
   };
 
   const updateCell = (idx: number, col: string, val: string) => {
@@ -764,6 +810,42 @@ function ImportCsvDialog({
             onChange={(e) => e.target.files && e.target.files[0] && parseFile(e.target.files[0])}
             className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
           />
+
+          {rows.length > 0 && (
+            <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-foreground">Reenviar CSV corrigido (mesclar)</p>
+                  <p className="text-muted-foreground">
+                    Linhas com o mesmo <b>title</b> substituem as atuais; as demais são adicionadas. Linhas já válidas permanecem na sessão.
+                  </p>
+                </div>
+                <button
+                  onClick={() => mergeInputRef.current?.click()}
+                  disabled={analyzing || importing}
+                  className="inline-flex items-center gap-2 rounded-full border border-sky-500/50 bg-sky-500/10 px-3 py-1.5 font-semibold text-sky-700 hover:bg-sky-500/20 disabled:opacity-50 dark:text-sky-300"
+                >
+                  <FileUp className="h-3.5 w-3.5" /> Reenviar corrigido
+                </button>
+                <input
+                  ref={mergeInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) mergeFile(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              {mergeInfo && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Última mesclagem de <b>{mergeInfo.fileName}</b>: {mergeInfo.reused} reaproveitada(s) · {mergeInfo.changed} atualizada(s) · {mergeInfo.added} nova(s).
+                </p>
+              )}
+            </div>
+          )}
 
           {analyzing && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
