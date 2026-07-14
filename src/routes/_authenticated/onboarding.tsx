@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { extractPaletteFromFile, type Palette } from "@/lib/palette";
+import { generateStoreCopy, type GeneratedCopy } from "@/lib/generate-copy.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
