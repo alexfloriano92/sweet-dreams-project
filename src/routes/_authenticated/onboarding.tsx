@@ -133,14 +133,14 @@ function Onboarding() {
         <div className="rounded-3xl border border-border bg-card p-8 shadow-elegant md:p-12">
           <fieldset disabled={generatingCopy} className="border-0 p-0 m-0 min-w-0 transition-opacity disabled:opacity-60">
             {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
-          {step === 1 && <StepStoreName name={storeName} setName={setStoreName} slug={slug} />}
-          {step === 2 && (
+            {step === 1 && <StepStoreName name={storeName} setName={setStoreName} slug={slug} />}
+            {step === 2 && (
             <StepLogo
               file={file} logoPreview={logoPreview} palette={palette} analyzing={analyzing}
               onFile={onFile}
             />
-          )}
-          {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
+            )}
+            {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
           </fieldset>
 
           <div className="mt-10 flex items-center justify-between">
