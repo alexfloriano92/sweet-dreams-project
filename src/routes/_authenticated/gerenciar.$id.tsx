@@ -549,19 +549,47 @@ function ImportCsvDialog({
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [stats, setStats] = useState<{ total: number; valid: number; toInsert: number; toUpdate: number; invalid: number } | null>(null);
 
   const parseFile = async (f: File) => {
     setFile(f);
     setErrors([]);
-    const text = await f.text();
-    const rows = parseCsv(text);
-    if (rows.length === 0) { setErrors(["Arquivo vazio."]); setPreview([]); return; }
-    const errs: string[] = [];
-    rows.forEach((r, i) => {
-      if (!r.title || !r.title.trim()) errs.push(`Linha ${i + 2}: título vazio`);
-    });
-    setErrors(errs);
-    setPreview(rows.slice(0, 50));
+    setStats(null);
+    setPreview([]);
+    setAnalyzing(true);
+    try {
+      const text = await f.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) { setErrors(["Arquivo vazio."]); return; }
+      const errs: string[] = [];
+      const validTitles: string[] = [];
+      rows.forEach((r, i) => {
+        if (!r.title || !r.title.trim()) errs.push(`Linha ${i + 2}: título vazio`);
+        else validTitles.push(r.title.trim());
+      });
+      setErrors(errs);
+      setPreview(rows.slice(0, 50));
+
+      let existingSet = new Set<string>();
+      if (validTitles.length > 0) {
+        const { data: existing } = await supabase
+          .from("vehicles").select("title").eq("store_id", storeId).in("title", validTitles);
+        existingSet = new Set((existing ?? []).map((e) => e.title));
+      }
+      const uniqueValid = Array.from(new Set(validTitles));
+      const toUpdate = uniqueValid.filter((t) => existingSet.has(t)).length;
+      const toInsert = uniqueValid.length - toUpdate;
+      setStats({
+        total: rows.length,
+        valid: validTitles.length,
+        toInsert,
+        toUpdate,
+        invalid: errs.length,
+      });
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const doImport = async () => {
