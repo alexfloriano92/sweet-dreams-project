@@ -599,6 +599,11 @@ function ImportCsvDialog({
   const [analyzing, setAnalyzing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [stats, setStats] = useState<{ total: number; valid: number; toInsert: number; toUpdate: number; invalid: number } | null>(null);
+  const [mergeInfo, setMergeInfo] = useState<{ reused: number; changed: number; added: number; fileName: string } | null>(null);
+  const mergeInputRef = useRef<HTMLInputElement | null>(null);
+
+  const serializeRow = (r: CsvRow) =>
+    CSV_COLUMNS.map((c) => (r[c] ?? "").toString().trim()).join("\u0001");
 
   const analyze = async (currentRows: CsvRow[]) => {
     setAnalyzing(true);
@@ -634,6 +639,7 @@ function ImportCsvDialog({
     setErrors([]);
     setInvalidIdx(new Set());
     setRows([]);
+    setMergeInfo(null);
     const text = await f.text();
     const parsed = parseCsv(text) as CsvRow[];
     if (parsed.length === 0) {
@@ -642,6 +648,46 @@ function ImportCsvDialog({
     }
     setRows(parsed);
     await analyze(parsed);
+  };
+
+  const mergeFile = async (f: File) => {
+    if (rows.length === 0) { await parseFile(f); return; }
+    const text = await f.text();
+    const parsed = parseCsv(text) as CsvRow[];
+    if (parsed.length === 0) { toast.error("Arquivo vazio."); return; }
+
+    const idxByTitle = new Map<string, number>();
+    rows.forEach((r, i) => {
+      const t = (r.title ?? "").trim();
+      if (t) idxByTitle.set(t, i);
+    });
+
+    const merged = rows.slice();
+    let reused = 0, changed = 0, added = 0;
+    for (const nr of parsed) {
+      const t = (nr.title ?? "").trim();
+      if (!t) { merged.push(nr); added++; continue; }
+      const existingIdx = idxByTitle.get(t);
+      if (existingIdx !== undefined) {
+        const before = serializeRow(merged[existingIdx]);
+        const after = serializeRow(nr);
+        if (before === after) {
+          reused++;
+        } else {
+          merged[existingIdx] = nr;
+          changed++;
+        }
+      } else {
+        merged.push(nr);
+        idxByTitle.set(t, merged.length - 1);
+        added++;
+      }
+    }
+
+    setRows(merged);
+    setMergeInfo({ reused, changed, added, fileName: f.name });
+    toast.success(`Mesclado: ${reused} reaproveitada(s), ${changed} atualizada(s), ${added} nova(s)`);
+    await analyze(merged);
   };
 
   const updateCell = (idx: number, col: string, val: string) => {
