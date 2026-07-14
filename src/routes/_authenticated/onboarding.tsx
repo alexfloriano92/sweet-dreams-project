@@ -135,10 +135,10 @@ function Onboarding() {
             {step === 0 && <StepPlan plan={plan} setPlan={setPlan} />}
             {step === 1 && <StepStoreName name={storeName} setName={setStoreName} slug={slug} />}
             {step === 2 && (
-            <StepLogo
-              file={file} logoPreview={logoPreview} palette={palette} analyzing={analyzing}
-              onFile={onFile}
-            />
+              <StepLogo
+                file={file} logoPreview={logoPreview} palette={palette} analyzing={analyzing}
+                onFile={onFile}
+              />
             )}
             {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
           </fieldset>
