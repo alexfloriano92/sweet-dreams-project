@@ -512,6 +512,7 @@ function StepReview({
     </div>
   );
 }
+
 function CopyProgress({ step }: { step: number }) {
   const steps = ["Analisando identidade", "Criando textos", "Finalizando copy"];
   return (
