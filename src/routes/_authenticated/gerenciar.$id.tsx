@@ -311,6 +311,23 @@ function VehiclesTab({
   onDelete: (v: VehicleRow) => void;
   onImport: () => void;
 }) {
+  const exportCsv = () => {
+    if (vehicles.length === 0) {
+      toast.info("Nenhum veículo para exportar.");
+      return;
+    }
+    const csv = buildVehiclesCsv(vehicles);
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `veiculos-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${vehicles.length} veículo(s) exportado(s)`);
+  };
+
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -319,6 +336,13 @@ function VehiclesTab({
           <p className="mt-1 text-sm text-muted-foreground">Cadastre e gerencie os carros exibidos no seu site.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={exportCsv}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold hover:bg-surface/70"
+            title="Baixar todos os veículos em CSV — edite e reimporte para atualizar em massa"
+          >
+            <Download className="h-4 w-4" /> Exportar CSV
+          </button>
           <button
             onClick={onImport}
             className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold hover:bg-surface/70"
@@ -333,6 +357,7 @@ function VehiclesTab({
           </button>
         </div>
       </div>
+
 
       {vehicles.length === 0 ? (
         <div className="mt-8 rounded-xl border border-dashed border-border bg-surface/30 p-10 text-center">
@@ -498,6 +523,24 @@ function fmtVal(v: unknown): string {
 const CSV_TEMPLATE =
   "title,brand,model,year,km,price,fuel,transmission,color,description,featured,sold\n" +
   "Honda Civic EXL 2020 Automático,Honda,Civic,2020,45000,99900,Flex,Automático,Preto,Único dono,true,false\n";
+
+const CSV_COLUMNS = ["title","brand","model","year","km","price","fuel","transmission","color","description","featured","sold"] as const;
+
+function csvEscape(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildVehiclesCsv(rows: VehicleRow[]): string {
+  const header = CSV_COLUMNS.join(",");
+  const body = rows.map((v) =>
+    CSV_COLUMNS.map((col) => csvEscape((v as unknown as Record<string, unknown>)[col])).join(",")
+  ).join("\n");
+  return header + "\n" + body + "\n";
+}
+
+
 
 function ImportCsvDialog({
   storeId, onClose, onDone,
