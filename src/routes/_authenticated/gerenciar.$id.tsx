@@ -750,6 +750,19 @@ function ImportCsvDialog({
   );
 }
 
+function StatCard({ label, value, tone }: { label: string; value: number; tone?: "success" | "info" | "warn" }) {
+  const toneClass =
+    tone === "success" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+    : tone === "info" ? "border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400"
+    : tone === "warn" ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+    : "border-border bg-surface/60 text-foreground";
+  return (
+    <div className={`rounded-lg border p-3 ${toneClass}`}>
+      <div className="text-[10px] font-medium uppercase tracking-wide opacity-80">{label}</div>
+      <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
+    </div>
+  );
+
 function parseBool(v: unknown): boolean {
   const s = String(v ?? "").toLowerCase().trim();
   return s === "true" || s === "1" || s === "sim" || s === "yes" || s === "x";
