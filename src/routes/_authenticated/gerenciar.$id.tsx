@@ -811,6 +811,42 @@ function ImportCsvDialog({
             className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
           />
 
+          {rows.length > 0 && (
+            <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-foreground">Reenviar CSV corrigido (mesclar)</p>
+                  <p className="text-muted-foreground">
+                    Linhas com o mesmo <b>title</b> substituem as atuais; as demais são adicionadas. Linhas já válidas permanecem na sessão.
+                  </p>
+                </div>
+                <button
+                  onClick={() => mergeInputRef.current?.click()}
+                  disabled={analyzing || importing}
+                  className="inline-flex items-center gap-2 rounded-full border border-sky-500/50 bg-sky-500/10 px-3 py-1.5 font-semibold text-sky-700 hover:bg-sky-500/20 disabled:opacity-50 dark:text-sky-300"
+                >
+                  <FileUp className="h-3.5 w-3.5" /> Reenviar corrigido
+                </button>
+                <input
+                  ref={mergeInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) mergeFile(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              {mergeInfo && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Última mesclagem de <b>{mergeInfo.fileName}</b>: {mergeInfo.reused} reaproveitada(s) · {mergeInfo.changed} atualizada(s) · {mergeInfo.added} nova(s).
+                </p>
+              )}
+            </div>
+          )}
+
           {analyzing && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Analisando arquivo…
