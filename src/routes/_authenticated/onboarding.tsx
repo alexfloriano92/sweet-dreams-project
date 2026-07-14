@@ -449,12 +449,9 @@ function StepReview({
 
       {/* Textos gerados por IA */}
       <div className="mt-6 rounded-2xl border border-border p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
-            <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
-          </div>
-
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
+          <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
         </div>
         {copy && (
           <div className="mt-4 space-y-3 text-sm">
