@@ -318,24 +318,105 @@ function StepLogo({
 function StepReview({
   storeName, plan, palette, logoPreview,
 }: { storeName: string; plan: Plan; palette: Palette; logoPreview: string }) {
+  const swatches = [
+    { label: "Primária", color: palette.primary },
+    { label: "Secundária", color: palette.secondary },
+    { label: "Destaque", color: palette.accent },
+    { label: "Neutra", color: palette.neutral },
+  ] as const;
+
   return (
     <div>
       <h2 className="font-display text-3xl font-bold">Tudo pronto!</h2>
-      <p className="mt-2 text-muted-foreground">Confira antes de gerar seu site.</p>
+      <p className="mt-2 text-muted-foreground">Confira a identidade visual antes de gerar seu site.</p>
+
       <div className="mt-8 grid gap-6 md:grid-cols-2">
+        {/* Loja */}
         <div className="rounded-2xl border border-border p-6">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Loja</p>
           <p className="mt-1 font-display text-2xl font-bold">{storeName}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Plano: <span className="capitalize text-primary">{plan}</span></p>
-          <p className="mt-1 text-sm text-muted-foreground">Estilo: <span className="capitalize">{palette.style}</span></p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              Plano {plan}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border bg-surface/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider capitalize">
+              Estilo {palette.style}
+            </span>
+          </div>
         </div>
-        <div className="rounded-2xl border border-border p-6">
-          <div className="flex items-center gap-4">
-            <img src={logoPreview} alt="Logo" className="h-16 w-16 rounded-lg bg-white object-contain p-2" />
-            <div className="flex gap-1.5">
-              {[palette.primary, palette.secondary, palette.accent, palette.neutral].map((c) => (
-                <div key={c} className="h-10 w-10 rounded-lg border border-border" style={{ background: c }} />
-              ))}
+
+        {/* Logo */}
+        <div className="rounded-2xl border border-border p-6 flex items-center gap-4">
+          <img src={logoPreview} alt="Logo" className="h-20 w-20 rounded-xl bg-white object-contain p-2" />
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Logomarca</p>
+            <p className="mt-1 text-sm text-muted-foreground">Aplicada em toda identidade da loja.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Paleta */}
+      <div className="mt-6 rounded-2xl border border-border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Paleta extraída</p>
+            <p className="mt-1 font-display text-lg font-semibold">4 cores da sua marca</p>
+          </div>
+          <span className="hidden text-xs text-muted-foreground md:inline">Gerada automaticamente pela IA</span>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {swatches.map(({ label, color }) => (
+            <div key={label} className="overflow-hidden rounded-xl border border-border">
+              <div className="aspect-[4/3]" style={{ background: color }} />
+              <div className="px-3 py-2">
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="font-mono text-xs uppercase text-muted-foreground">{color}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Preview simulado do site */}
+      <div className="mt-6 rounded-2xl border border-border p-6">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Prévia do site</p>
+        <div
+          className="mt-4 overflow-hidden rounded-xl border border-border"
+          style={{ background: palette.neutral, color: "#fff" }}
+        >
+          {/* Fake header */}
+          <div
+            className="flex items-center justify-between px-5 py-3"
+            style={{ background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})` }}
+          >
+            <div className="flex items-center gap-2">
+              <img src={logoPreview} alt="" className="h-7 w-7 rounded bg-white object-contain p-0.5" />
+              <span className="font-display text-sm font-bold">{storeName}</span>
+            </div>
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
+              style={{ background: palette.accent, color: palette.neutral }}
+            >
+              WhatsApp
+            </span>
+          </div>
+          {/* Fake hero */}
+          <div className="px-5 py-6">
+            <p className="font-display text-lg font-bold">Seminovos com procedência garantida</p>
+            <p className="mt-1 text-xs opacity-70">Financiamento em até 60x · Aceitamos seu usado</p>
+            <div className="mt-4 flex gap-2">
+              <span
+                className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                style={{ background: palette.primary, color: "#fff" }}
+              >
+                Ver estoque
+              </span>
+              <span
+                className="rounded-full border px-3 py-1.5 text-[11px] font-semibold"
+                style={{ borderColor: palette.accent, color: palette.accent }}
+              >
+                Simular parcelas
+              </span>
             </div>
           </div>
         </div>
@@ -343,3 +424,4 @@ function StepReview({
     </div>
   );
 }
+
