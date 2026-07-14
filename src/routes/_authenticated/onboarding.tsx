@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { extractPaletteFromFile, type Palette } from "@/lib/palette";
+import { generateStoreCopy, type GeneratedCopy } from "@/lib/generate-copy.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
@@ -52,6 +53,19 @@ function Onboarding() {
     }
   };
 
+  const [copy, setCopy] = useState<GeneratedCopy | null>(null);
+  const [generatingCopy, setGeneratingCopy] = useState(false);
+
+  useEffect(() => {
+    if (step === 3 && palette && storeName && !copy && !generatingCopy) {
+      setGeneratingCopy(true);
+      generateStoreCopy({ data: { storeName, style: palette.style } })
+        .then((c) => setCopy(c))
+        .catch(() => toast.error("Não foi possível gerar textos, usando padrão."))
+        .finally(() => setGeneratingCopy(false));
+    }
+  }, [step, palette, storeName, copy, generatingCopy]);
+
   const finish = async () => {
     if (!file || !palette || !storeName) return;
     setSaving(true);
@@ -84,7 +98,8 @@ function Onboarding() {
         neutral_color: palette.neutral,
         style_tag: palette.style,
         onboarded: true,
-      });
+        ...(copy ?? {}),
+      } as any);
       if (insErr) throw insErr;
 
       toast.success("Loja criada! Bem-vindo ao painel.");
@@ -124,7 +139,7 @@ function Onboarding() {
               onFile={onFile}
             />
           )}
-          {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} />}
+          {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} />}
 
           <div className="mt-10 flex items-center justify-between">
             <button
@@ -316,13 +331,15 @@ function StepLogo({
 }
 
 function StepReview({
-  storeName, plan, palette, setPalette, logoPreview,
+  storeName, plan, palette, setPalette, logoPreview, copy, generatingCopy,
 }: {
   storeName: string;
   plan: Plan;
   palette: Palette;
   setPalette: (updater: (p: Palette | null) => Palette | null) => void;
   logoPreview: string;
+  copy: GeneratedCopy | null;
+  generatingCopy: boolean;
 }) {
   const swatches = [
     { key: "primary" as const, label: "Primária", color: palette.primary },
@@ -416,6 +433,29 @@ function StepReview({
       </div>
 
 
+      {/* Textos gerados por IA */}
+      <div className="mt-6 rounded-2xl border border-border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Textos gerados por IA</p>
+            <p className="mt-1 font-display text-lg font-semibold">Copy personalizado para sua loja</p>
+          </div>
+          {generatingCopy && (
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando…
+            </span>
+          )}
+        </div>
+        {copy && (
+          <div className="mt-4 space-y-3 text-sm">
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Título:</span> <span className="font-semibold">{copy.hero_headline}</span></div>
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Subtítulo:</span> <span className="text-muted-foreground">{copy.hero_subheadline}</span></div>
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Slogan:</span> <span className="italic">{copy.tagline}</span></div>
+            <div><span className="text-xs uppercase tracking-wider text-muted-foreground">Sobre:</span> <span className="text-muted-foreground">{copy.about_text}</span></div>
+          </div>
+        )}
+      </div>
+
       {/* Preview simulado do site */}
       <div className="mt-6 rounded-2xl border border-border p-6">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Prévia do site</p>
@@ -423,7 +463,6 @@ function StepReview({
           className="mt-4 overflow-hidden rounded-xl border border-border"
           style={{ background: palette.neutral, color: "#fff" }}
         >
-          {/* Fake header */}
           <div
             className="flex items-center justify-between px-5 py-3"
             style={{ background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})` }}
@@ -439,16 +478,19 @@ function StepReview({
               WhatsApp
             </span>
           </div>
-          {/* Fake hero */}
           <div className="px-5 py-6">
-            <p className="font-display text-lg font-bold">Seminovos com procedência garantida</p>
-            <p className="mt-1 text-xs opacity-70">Financiamento em até 60x · Aceitamos seu usado</p>
+            <p className="font-display text-lg font-bold">
+              {copy?.hero_headline ?? "Seminovos com procedência garantida"}
+            </p>
+            <p className="mt-1 text-xs opacity-70">
+              {copy?.hero_subheadline ?? "Financiamento em até 60x · Aceitamos seu usado"}
+            </p>
             <div className="mt-4 flex gap-2">
               <span
                 className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
                 style={{ background: palette.primary, color: "#fff" }}
               >
-                Ver estoque
+                {copy?.cta_text ?? "Ver estoque"}
               </span>
               <span
                 className="rounded-full border px-3 py-1.5 text-[11px] font-semibold"

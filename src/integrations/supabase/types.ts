@@ -40,12 +40,16 @@ export type Database = {
       }
       stores: {
         Row: {
+          about_text: string | null
           accent_color: string | null
           address: string | null
           city: string | null
           created_at: string
+          cta_text: string | null
           font_body: string | null
           font_display: string | null
+          hero_headline: string | null
+          hero_subheadline: string | null
           id: string
           logo_url: string | null
           name: string
@@ -60,16 +64,21 @@ export type Database = {
           slug: string
           state: string | null
           style_tag: string | null
+          tagline: string | null
           updated_at: string
           whatsapp: string | null
         }
         Insert: {
+          about_text?: string | null
           accent_color?: string | null
           address?: string | null
           city?: string | null
           created_at?: string
+          cta_text?: string | null
           font_body?: string | null
           font_display?: string | null
+          hero_headline?: string | null
+          hero_subheadline?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -84,16 +93,21 @@ export type Database = {
           slug: string
           state?: string | null
           style_tag?: string | null
+          tagline?: string | null
           updated_at?: string
           whatsapp?: string | null
         }
         Update: {
+          about_text?: string | null
           accent_color?: string | null
           address?: string | null
           city?: string | null
           created_at?: string
+          cta_text?: string | null
           font_body?: string | null
           font_display?: string | null
+          hero_headline?: string | null
+          hero_subheadline?: string | null
           id?: string
           logo_url?: string | null
           name?: string
@@ -108,10 +122,79 @@ export type Database = {
           slug?: string
           state?: string | null
           style_tag?: string | null
+          tagline?: string | null
           updated_at?: string
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      vehicles: {
+        Row: {
+          brand: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          featured: boolean
+          fuel: string | null
+          id: string
+          km: number | null
+          model: string | null
+          photos: Json
+          price: number | null
+          sold: boolean
+          store_id: string
+          title: string
+          transmission: string | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          fuel?: string | null
+          id?: string
+          km?: number | null
+          model?: string | null
+          photos?: Json
+          price?: number | null
+          sold?: boolean
+          store_id: string
+          title: string
+          transmission?: string | null
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          fuel?: string | null
+          id?: string
+          km?: number | null
+          model?: string | null
+          photos?: Json
+          price?: number | null
+          sold?: boolean
+          store_id?: string
+          title?: string
+          transmission?: string | null
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
