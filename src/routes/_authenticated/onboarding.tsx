@@ -160,11 +160,12 @@ function Onboarding() {
             ) : (
               <button
                 onClick={finish}
-                disabled={saving || !palette || !file}
+                disabled={saving || !palette || !file || generatingCopy}
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-elegant transition hover:brightness-110 disabled:opacity-50"
+                title={generatingCopy ? "Aguarde a IA terminar de gerar os textos…" : undefined}
               >
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Criar minha loja <Sparkles className="h-4 w-4" />
+                {(saving || generatingCopy) && <Loader2 className="h-4 w-4 animate-spin" />}
+                {generatingCopy ? "Gerando textos…" : "Criar minha loja"} <Sparkles className="h-4 w-4" />
               </button>
             )}
           </div>
