@@ -143,11 +143,19 @@ function Dashboard() {
                     to="/loja/$slug"
                     params={{ slug: s.slug }}
                     target="_blank"
-                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
                   >
                     Abrir site <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
                 </div>
+
+                <Link
+                  to="/gerenciar/$id"
+                  params={{ id: s.id }}
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elegant hover:brightness-110"
+                >
+                  Gerenciar loja
+                </Link>
               </div>
             ))}
           </div>
