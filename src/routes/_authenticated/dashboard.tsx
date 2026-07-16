@@ -29,16 +29,26 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [email, setEmail] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
       setEmail(userRes.user?.email ?? "");
-      const { data, error } = await supabase.from("stores").select("*").order("created_at", { ascending: false });
-      if (error) toast.error(error.message);
-      setStores((data as Store[]) ?? []);
+
+      const [rolesRes, storesRes] = await Promise.all([
+        uid
+          ? supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle()
+          : Promise.resolve({ data: null, error: null } as const),
+        supabase.from("stores").select("*").eq("owner_id", uid ?? "").order("created_at", { ascending: false }),
+      ]);
+      const admin = !!rolesRes.data;
+      setIsAdmin(admin);
+      if (storesRes.error) toast.error(storesRes.error.message);
+      setStores((storesRes.data as Store[]) ?? []);
       setLoading(false);
-      if (!error && (!data || data.length === 0)) {
+      if (!admin && !storesRes.error && (!storesRes.data || storesRes.data.length === 0)) {
         navigate({ to: "/onboarding" });
       }
     })();
