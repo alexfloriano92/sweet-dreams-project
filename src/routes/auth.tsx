@@ -49,7 +49,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada! Verifique seu email se a confirmação estiver ativa.");
+        setSignupSentTo(email);
+        toast.success("Conta criada! Confirme pelo link enviado no seu email.", { duration: 8000 });
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
