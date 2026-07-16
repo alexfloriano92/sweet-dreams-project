@@ -50,6 +50,13 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Conta criada! Verifique seu email se a confirmação estiver ativa.");
+      } else if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Se o email existir, enviamos um link para redefinir a senha.");
+        setMode("login");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
