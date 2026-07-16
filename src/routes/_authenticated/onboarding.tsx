@@ -202,6 +202,40 @@ function Onboarding() {
               />
             )}
             {step === 3 && <StepReview storeName={storeName} plan={plan} palette={palette!} setPalette={setPalette} logoPreview={logoPreview!} copy={copy} generatingCopy={generatingCopy} copyWasCanceled={copyWasCanceled} regeneratingCopy={regeneratingCopy} onRegenerate={regenerateCopy} />}
+            {step === 3 && !generatingCopy && (
+              <div className="mt-6 rounded-2xl border border-border p-6">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Escolha o estilo do site</p>
+                <p className="mt-1 font-display text-lg font-semibold">4 templates sofisticados — troque quando quiser</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {TEMPLATES.map((t) => {
+                    const selected = template === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setTemplate(t.id)}
+                        className={`relative rounded-xl border p-4 text-left transition ${selected ? "border-primary bg-primary/5 shadow-elegant" : "border-border hover:border-primary/40"}`}
+                      >
+                        <div className="aspect-[4/3] w-full overflow-hidden rounded-lg" style={{
+                          background: t.vibe === "dark"
+                            ? `linear-gradient(135deg, ${palette?.neutral ?? "#0a0a0a"}, ${palette?.secondary ?? "#111"})`
+                            : `linear-gradient(135deg, #faf7f0, #f0ebe0)`,
+                        }}>
+                          <div className="flex h-full flex-col justify-between p-3">
+                            <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: palette?.primary ?? "#c9a84c" }}>{t.tagline}</span>
+                            <span className={`text-sm font-black ${t.vibe === "dark" ? "text-white" : "text-neutral-900"}`}>Aa</span>
+                            <div className="h-1 w-8 rounded-full" style={{ background: palette?.primary ?? "#c9a84c" }} />
+                          </div>
+                        </div>
+                        <p className="mt-3 text-sm font-semibold">{t.label}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                        {selected && <span className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground"><Check className="h-3.5 w-3.5" /></span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </fieldset>
 
           <div className="mt-10 flex items-center justify-between">
