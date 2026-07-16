@@ -112,6 +112,7 @@ export type Database = {
           state: string | null
           style_tag: string | null
           tagline: string | null
+          template: string
           updated_at: string
           whatsapp: string | null
         }
@@ -141,6 +142,7 @@ export type Database = {
           state?: string | null
           style_tag?: string | null
           tagline?: string | null
+          template?: string
           updated_at?: string
           whatsapp?: string | null
         }
@@ -170,6 +172,7 @@ export type Database = {
           state?: string | null
           style_tag?: string | null
           tagline?: string | null
+          template?: string
           updated_at?: string
           whatsapp?: string | null
         }
