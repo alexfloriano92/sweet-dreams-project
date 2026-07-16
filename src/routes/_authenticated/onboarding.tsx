@@ -6,6 +6,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { extractPaletteFromFile, type Palette } from "@/lib/palette";
 import { generateStoreCopy, type GeneratedCopy } from "@/lib/generate-copy.functions";
+import { TEMPLATES, type TemplateId } from "@/components/store-templates/types";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
