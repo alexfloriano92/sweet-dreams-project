@@ -48,7 +48,7 @@ function Manage() {
   const [loading, setLoading] = useState(true);
   const [savingStore, setSavingStore] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [tab, setTab] = useState<"info" | "textos" | "veiculos" | "historico">("info");
+  const [tab, setTab] = useState<"info" | "textos" | "estilo" | "veiculos" | "historico">("info");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<VehicleRow | null>(null);
