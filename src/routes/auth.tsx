@@ -94,51 +94,83 @@ function AuthPage() {
 
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-elegant">
         <h1 className="font-display text-2xl font-bold text-center">
-          {mode === "login" ? "Bem-vindo de volta" : "Criar sua conta"}
+          {mode === "login" ? "Bem-vindo de volta" : mode === "signup" ? "Criar sua conta" : "Recuperar senha"}
         </h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">
-          {mode === "login" ? "Acesse o painel da sua revenda." : "Comece grátis por 7 dias."}
+          {mode === "login"
+            ? "Acesse o painel da sua revenda."
+            : mode === "signup"
+              ? "Comece grátis por 7 dias."
+              : "Enviaremos um link para redefinir a sua senha."}
         </p>
 
-        <button
-          onClick={handleGoogle}
-          disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-surface disabled:opacity-60"
-        >
-          <GoogleIcon />
-          Continuar com Google
-        </button>
+        {mode !== "forgot" && (
+          <>
+            <button
+              onClick={handleGoogle}
+              disabled={loading}
+              className="mt-6 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-surface disabled:opacity-60"
+            >
+              <GoogleIcon />
+              Continuar com Google
+            </button>
 
-        <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="h-px flex-1 bg-border" />
-          ou com email
-          <div className="h-px flex-1 bg-border" />
-        </div>
+            <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              ou com email
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
 
-        <form onSubmit={handleEmail} className="space-y-3">
+        <form onSubmit={handleEmail} className={`space-y-3 ${mode === "forgot" ? "mt-6" : ""}`}>
           {mode === "signup" && (
             <Field icon={<User className="h-4 w-4" />} value={name} onChange={setName} placeholder="Nome completo" />
           )}
           <Field icon={<Mail className="h-4 w-4" />} type="email" value={email} onChange={setEmail} placeholder="email@revenda.com.br" required />
-          <Field icon={<Lock className="h-4 w-4" />} type="password" value={password} onChange={setPassword} placeholder="Senha (mínimo 6 caracteres)" required minLength={6} />
+          {mode !== "forgot" && (
+            <Field icon={<Lock className="h-4 w-4" />} type="password" value={password} onChange={setPassword} placeholder="Senha (mínimo 6 caracteres)" required minLength={6} />
+          )}
+          {mode === "login" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-elegant transition hover:brightness-110 disabled:opacity-60"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "login" ? "Entrar" : "Criar conta"}
+            {mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Enviar link de recuperação"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          {mode === "login" ? "Ainda não tem conta?" : "Já tem conta?"}{" "}
-          <button
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="font-medium text-primary hover:underline"
-          >
-            {mode === "login" ? "Criar agora" : "Entrar"}
-          </button>
+          {mode === "forgot" ? (
+            <>
+              Lembrou a senha?{" "}
+              <button onClick={() => setMode("login")} className="font-medium text-primary hover:underline">
+                Voltar para o login
+              </button>
+            </>
+          ) : (
+            <>
+              {mode === "login" ? "Ainda não tem conta?" : "Já tem conta?"}{" "}
+              <button
+                onClick={() => setMode(mode === "login" ? "signup" : "login")}
+                className="font-medium text-primary hover:underline"
+              >
+                {mode === "login" ? "Criar agora" : "Entrar"}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
