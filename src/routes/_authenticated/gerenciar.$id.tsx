@@ -1300,3 +1300,49 @@ function Field({ label, children, className }: { label: string; children: React.
     </label>
   );
 }
+
+function StyleTab({ store, onSave, saving }: { store: StoreRow; onSave: (p: Partial<StoreRow>) => Promise<void>; saving: boolean }) {
+  const current = ((store as any).template as TemplateId) ?? "premium-dark";
+  const primary = store.primary_color || "#c9a84c";
+  const neutral = store.neutral_color || "#0a0a0a";
+  const secondary = store.secondary_color || "#111827";
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Estilo do site</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Escolha um dos 4 templates sofisticados. A troca é instantânea após salvar.</p>
+        </div>
+      </div>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {TEMPLATES.map((t) => {
+          const selected = current === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              disabled={saving}
+              onClick={() => onSave({ template: t.id } as any)}
+              className={`relative rounded-xl border p-4 text-left transition disabled:opacity-60 ${selected ? "border-primary bg-primary/5 shadow-elegant" : "border-border hover:border-primary/40"}`}
+            >
+              <div className="aspect-[4/3] w-full overflow-hidden rounded-lg" style={{
+                background: t.vibe === "dark"
+                  ? `linear-gradient(135deg, ${neutral}, ${secondary})`
+                  : `linear-gradient(135deg, #faf7f0, #f0ebe0)`,
+              }}>
+                <div className="flex h-full flex-col justify-between p-3">
+                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: primary }}>{t.tagline}</span>
+                  <span className={`text-sm font-black ${t.vibe === "dark" ? "text-white" : "text-neutral-900"}`}>Aa</span>
+                  <div className="h-1 w-8 rounded-full" style={{ background: primary }} />
+                </div>
+              </div>
+              <p className="mt-3 text-sm font-semibold">{t.label}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+              {selected && <span className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">✓</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
