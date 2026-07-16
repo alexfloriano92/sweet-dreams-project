@@ -69,8 +69,16 @@ function Dashboard() {
             </div>
             <span className="font-display text-lg font-bold">AutoSite</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground md:inline">{email}</span>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+              >
+                <Shield className="h-3.5 w-3.5" /> Admin
+              </Link>
+            )}
             <button
               onClick={signOut}
               className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-surface"
