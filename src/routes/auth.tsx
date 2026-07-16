@@ -89,24 +89,6 @@ function AuthPage() {
               : "Enviaremos um link para redefinir a sua senha."}
         </p>
 
-        {mode !== "forgot" && (
-          <>
-            <button
-              onClick={handleGoogle}
-              disabled={loading}
-              className="mt-6 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-surface disabled:opacity-60"
-            >
-              <GoogleIcon />
-              Continuar com Google
-            </button>
-
-            <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="h-px flex-1 bg-border" />
-              ou com email
-              <div className="h-px flex-1 bg-border" />
-            </div>
-          </>
-        )}
 
         <form onSubmit={handleEmail} className={`space-y-3 ${mode === "forgot" ? "mt-6" : ""}`}>
           {mode === "signup" && (
