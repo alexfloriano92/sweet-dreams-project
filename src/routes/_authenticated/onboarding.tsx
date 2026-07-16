@@ -155,6 +155,7 @@ function Onboarding() {
         neutral_color: palette.neutral,
         style_tag: palette.style,
         onboarded: true,
+        template,
         ...(copy ?? {}),
       } as any);
       if (insErr) throw insErr;
