@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Car, Loader2, Mail, Lock, User } from "lucide-react";
+import { Car, Loader2, Mail, Lock, User, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signupSentTo, setSignupSentTo] = useState<string | null>(null);
 
   useEffect(() => {
     // If already signed in, bounce to the app
@@ -48,7 +49,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Conta criada! Verifique seu email se a confirmação estiver ativa.");
+        setSignupSentTo(email);
+        toast.success("Conta criada! Confirme pelo link enviado no seu email.", { duration: 8000 });
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -88,6 +90,45 @@ function AuthPage() {
               ? "Comece grátis por 7 dias."
               : "Enviaremos um link para redefinir a sua senha."}
         </p>
+
+        {signupSentTo && (
+          <div className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+              <div className="space-y-2">
+                <p className="font-semibold text-emerald-300">Conta criada! Confirme seu email</p>
+                <p className="text-muted-foreground">
+                  Enviamos um link de confirmação para <span className="font-medium text-foreground">{signupSentTo}</span>.
+                  Clique no link para ativar sua conta e poder entrar.
+                </p>
+                <p className="flex items-start gap-2 rounded-lg bg-amber-500/10 p-2 text-amber-300">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    <strong>Não encontrou?</strong> Verifique a caixa de <strong>Spam</strong> ou <strong>Promoções</strong>.
+                    O email pode levar alguns minutos para chegar.
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSignupSentTo(null); setMode("login"); }}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Já confirmei — ir para o login
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mode === "signup" && !signupSentTo && (
+          <div className="mt-6 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Após criar a conta, enviaremos um <strong>email de confirmação</strong>. Se não aparecer na caixa de entrada em alguns minutos,
+              verifique as pastas <strong>Spam</strong> e <strong>Promoções</strong>.
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleEmail} className="mt-6 space-y-3">
           {mode === "signup" && (
