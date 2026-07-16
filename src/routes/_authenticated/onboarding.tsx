@@ -37,6 +37,7 @@ function Onboarding() {
   const [palette, setPalette] = useState<Palette | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [template, setTemplate] = useState<TemplateId>("premium-dark");
 
   const slug = useMemo(
     () => storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
