@@ -966,8 +966,36 @@ function ImportCsvDialog({
           )}
         </div>
 
+        {progress && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground">
+                {progress.phase} {progress.total > 0 && `(${progress.current}/${progress.total})`}
+              </span>
+              <span className="text-muted-foreground">
+                {progress.inserted} novo(s) · {progress.updated} atualizado(s)
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full bg-gradient-primary transition-all"
+                style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         <DialogFooter>
-          <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface">Cancelar</button>
+          {importing ? (
+            <button
+              onClick={() => { cancelRef.current = true; }}
+              className="rounded-full border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/20"
+            >
+              Cancelar importação
+            </button>
+          ) : (
+            <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface">Cancelar</button>
+          )}
           <button
             onClick={doImport}
             disabled={!file || importing || analyzing || dirty || !stats || stats.valid === 0}
