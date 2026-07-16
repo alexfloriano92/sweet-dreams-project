@@ -600,6 +600,8 @@ function ImportCsvDialog({
   const [dirty, setDirty] = useState(false);
   const [stats, setStats] = useState<{ total: number; valid: number; toInsert: number; toUpdate: number; invalid: number } | null>(null);
   const [mergeInfo, setMergeInfo] = useState<{ reused: number; changed: number; added: number; fileName: string } | null>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number; phase: string; inserted: number; updated: number } | null>(null);
+  const cancelRef = useRef(false);
   const mergeInputRef = useRef<HTMLInputElement | null>(null);
 
   const serializeRow = (r: CsvRow) =>
