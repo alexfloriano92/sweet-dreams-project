@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Car, LogOut, Plus, Globe, Palette, ExternalLink, Loader2 } from "lucide-react";
+import { Car, LogOut, Plus, Globe, Palette, ExternalLink, Loader2, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,16 +29,26 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [email, setEmail] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
       setEmail(userRes.user?.email ?? "");
-      const { data, error } = await supabase.from("stores").select("*").order("created_at", { ascending: false });
-      if (error) toast.error(error.message);
-      setStores((data as Store[]) ?? []);
+
+      const [rolesRes, storesRes] = await Promise.all([
+        uid
+          ? supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle()
+          : Promise.resolve({ data: null, error: null } as const),
+        supabase.from("stores").select("*").eq("owner_id", uid ?? "").order("created_at", { ascending: false }),
+      ]);
+      const admin = !!rolesRes.data;
+      setIsAdmin(admin);
+      if (storesRes.error) toast.error(storesRes.error.message);
+      setStores((storesRes.data as Store[]) ?? []);
       setLoading(false);
-      if (!error && (!data || data.length === 0)) {
+      if (!admin && !storesRes.error && (!storesRes.data || storesRes.data.length === 0)) {
         navigate({ to: "/onboarding" });
       }
     })();
@@ -59,8 +69,16 @@ function Dashboard() {
             </div>
             <span className="font-display text-lg font-bold">AutoSite</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground md:inline">{email}</span>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+              >
+                <Shield className="h-3.5 w-3.5" /> Admin
+              </Link>
+            )}
             <button
               onClick={signOut}
               className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-surface"
