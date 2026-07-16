@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Car, MapPin, Phone, MessageCircle, Sparkles, Search, SlidersHorizontal, X, ArrowRight, Star, Award, Shield } from "lucide-react";
 import {
   type StoreLike, type VehicleLike, type TemplateId,
@@ -14,8 +15,6 @@ export function StoreTemplate(props: Props) {
   return <PremiumDark {...props} />;
 }
 
-/* ---------------- shared bits ---------------- */
-
 function waLink(store: StoreLike) {
   const digits = store.whatsapp?.replace(/\D/g, "");
   return digits ? `https://wa.me/55${digits}` : null;
@@ -30,9 +29,7 @@ function useColors(store: StoreLike) {
   };
 }
 
-/* ================================================================
- * 1) PREMIUM DARK — showroom noturno (estilo JB Multimarcas)
- * ================================================================ */
+/* ================ 1) PREMIUM DARK ================ */
 function PremiumDark({ store, vehicles }: Props) {
   const c = useColors(store);
   const wa = waLink(store);
@@ -42,7 +39,6 @@ function PremiumDark({ store, vehicles }: Props) {
 
   return (
     <div className="min-h-screen text-white" style={{ background: c.neutral }}>
-      {/* Nav */}
       <header className="absolute inset-x-0 top-0 z-30">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
@@ -71,7 +67,6 @@ function PremiumDark({ store, vehicles }: Props) {
         </div>
       </header>
 
-      {/* Hero cinematográfico */}
       <section className="relative min-h-[92vh] overflow-hidden">
         {hero ? (
           <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -103,7 +98,6 @@ function PremiumDark({ store, vehicles }: Props) {
                 </a>
               )}
             </div>
-
             <div className="mt-14 grid max-w-xl grid-cols-3 gap-6 border-t border-white/10 pt-6">
               <Stat value={vehicles.length.toString()} label="Veículos" accent={c.primary} />
               <Stat value="100%" label="Procedência" accent={c.primary} />
@@ -113,30 +107,26 @@ function PremiumDark({ store, vehicles }: Props) {
         </div>
       </section>
 
-      {/* Destaques */}
       {featured.length > 0 && (
         <section className="mx-auto max-w-7xl px-6 py-24">
           <SectionEyebrow color={c.primary}>Destaques da semana</SectionEyebrow>
           <h2 className="mt-3 font-serif text-4xl font-bold md:text-5xl">Selecionados a dedo</h2>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {featured.map((v) => <DarkCard key={v.id} v={v} accent={c.primary} />)}
+            {featured.map((v) => <VehicleCard key={v.id} v={v} theme="dark" accent={c.primary} variant="premium" />)}
           </div>
         </section>
       )}
 
-      {/* Estoque */}
       <section id="estoque" className="border-t border-white/10">
         <div className="mx-auto max-w-7xl px-6 py-24">
           <SectionEyebrow color={c.primary}>Catálogo completo</SectionEyebrow>
           <h2 className="mt-3 font-serif text-4xl font-bold md:text-5xl">Nosso estoque</h2>
           <p className="mt-3 text-white/60">{filters.filtered.length} de {vehicles.length} veículo(s)</p>
-
           <FilterBar theme="dark" accent={c.primary} filters={filters} />
-          <StockGrid theme="dark" accent={c.primary} vehicles={filters.filtered} total={vehicles.length} clear={filters.clear} />
+          <StockGrid theme="dark" accent={c.primary} filters={filters} variant="premium" total={vehicles.length} />
         </div>
       </section>
 
-      {/* Sobre */}
       {store.about_text && (
         <section id="sobre" className="border-t border-white/10 bg-black/40">
           <div className="mx-auto grid max-w-7xl gap-14 px-6 py-24 md:grid-cols-[1.2fr_1fr]">
@@ -166,9 +156,7 @@ function PremiumDark({ store, vehicles }: Props) {
   );
 }
 
-/* ================================================================
- * 2) EDITORIAL MINIMAL — concessionária europeia
- * ================================================================ */
+/* ================ 2) EDITORIAL MINIMAL ================ */
 function EditorialMinimal({ store, vehicles }: Props) {
   const c = useColors(store);
   const wa = waLink(store);
@@ -202,7 +190,6 @@ function EditorialMinimal({ store, vehicles }: Props) {
         </div>
       </header>
 
-      {/* Hero editorial — split */}
       <section className="mx-auto grid max-w-7xl gap-12 px-8 py-20 md:grid-cols-2 md:py-28">
         <div className="flex flex-col justify-center">
           <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
@@ -238,7 +225,6 @@ function EditorialMinimal({ store, vehicles }: Props) {
         </div>
       </section>
 
-      {/* Estoque */}
       <section id="estoque" className="border-t border-neutral-200/70">
         <div className="mx-auto max-w-7xl px-8 py-24">
           <div className="mb-12 flex items-end justify-between">
@@ -246,17 +232,13 @@ function EditorialMinimal({ store, vehicles }: Props) {
               <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">A coleção</p>
               <h2 className="mt-3 font-serif text-4xl md:text-5xl">Veículos disponíveis</h2>
             </div>
-            <p className="hidden text-sm text-neutral-500 md:block">
-              {filters.filtered.length} de {vehicles.length}
-            </p>
+            <p className="hidden text-sm text-neutral-500 md:block">{filters.filtered.length} de {vehicles.length}</p>
           </div>
-
-          <FilterBar theme="light" accent={c.primary} filters={filters} minimal />
-          <StockGrid theme="light" accent={c.primary} vehicles={filters.filtered} total={vehicles.length} clear={filters.clear} style="editorial" />
+          <FilterBar theme="light" accent={c.primary} filters={filters} />
+          <StockGrid theme="light" accent={c.primary} filters={filters} variant="editorial" total={vehicles.length} />
         </div>
       </section>
 
-      {/* Sobre */}
       {store.about_text && (
         <section id="sobre" className="border-t border-neutral-200/70 bg-white">
           <div className="mx-auto grid max-w-7xl gap-16 px-8 py-24 md:grid-cols-[1fr_1fr]">
@@ -283,14 +265,16 @@ function EditorialMinimal({ store, vehicles }: Props) {
   );
 }
 
-/* ================================================================
- * 3) SPORT BOLD — pista, adrenalina
- * ================================================================ */
+/* ================ 3) SPORT BOLD ================ */
 function SportBold({ store, vehicles }: Props) {
   const c = useColors(store);
   const wa = waLink(store);
   const hero = heroPhotoFrom(vehicles);
   const filters = useStockFilters(vehicles);
+  const headline = store.hero_headline ?? "Velocidade. Adrenalina.";
+  const words = headline.split(" ");
+  const line1 = words.slice(0, Math.ceil(words.length / 2)).join(" ");
+  const line2 = words.slice(Math.ceil(words.length / 2)).join(" ") || "Adrenalina.";
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
@@ -304,7 +288,7 @@ function SportBold({ store, vehicles }: Props) {
                 <Car className="h-5 w-5 text-black" />
               </div>
             )}
-            <p className="text-lg font-black uppercase tracking-tight" style={{ fontStretch: "condensed" }}>{store.name}</p>
+            <p className="text-lg font-black uppercase tracking-tight">{store.name}</p>
           </div>
           {wa && (
             <a href={wa} target="_blank" rel="noopener" className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black uppercase tracking-widest text-black" style={{ background: c.primary, clipPath: "polygon(8% 0, 100% 0, 92% 100%, 0 100%)" }}>
@@ -314,7 +298,6 @@ function SportBold({ store, vehicles }: Props) {
         </div>
       </header>
 
-      {/* Hero diagonal */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           {hero ? (
@@ -322,7 +305,7 @@ function SportBold({ store, vehicles }: Props) {
           ) : (
             <div className="h-full w-full" style={{ background: `linear-gradient(120deg, ${c.neutral}, ${c.secondary})` }} />
           )}
-          <div className="absolute inset-0" style={{ background: `linear-gradient(105deg, #000 0%, #000000cc 40%, transparent 75%)` }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(105deg, #000 0%, #000000cc 40%, transparent 75%)" }} />
         </div>
 
         <div className="relative mx-auto max-w-7xl px-6 py-32 md:py-40">
@@ -330,10 +313,8 @@ function SportBold({ store, vehicles }: Props) {
             <Sparkles className="h-3.5 w-3.5" /> {store.style_tag ?? "Performance"}
           </span>
           <h1 className="mt-8 text-6xl font-black uppercase leading-[0.9] tracking-tight md:text-8xl">
-            <span className="block">{(store.hero_headline ?? "Velocidade.").split(" ").slice(0, 2).join(" ")}</span>
-            <span className="block" style={{ color: c.primary }}>
-              {(store.hero_headline ?? "Adrenalina.").split(" ").slice(2).join(" ") || "Adrenalina."}
-            </span>
+            <span className="block">{line1}</span>
+            <span className="block" style={{ color: c.primary }}>{line2}</span>
           </h1>
           <p className="mt-8 max-w-xl text-lg text-white/70">
             {store.hero_subheadline ?? "Máquinas selecionadas para quem entende de direção."}
@@ -349,7 +330,6 @@ function SportBold({ store, vehicles }: Props) {
           </div>
         </div>
 
-        {/* barra decorativa */}
         <div className="absolute inset-x-0 bottom-0 flex h-2">
           <div className="flex-1" style={{ background: c.primary }} />
           <div className="w-1/4 bg-white" />
@@ -357,7 +337,6 @@ function SportBold({ store, vehicles }: Props) {
         </div>
       </section>
 
-      {/* Estoque */}
       <section id="estoque" className="mx-auto max-w-7xl px-6 py-24">
         <div className="flex items-end justify-between border-b border-white/10 pb-6">
           <div>
@@ -366,12 +345,10 @@ function SportBold({ store, vehicles }: Props) {
           </div>
           <p className="text-sm text-white/50">{filters.filtered.length}/{vehicles.length}</p>
         </div>
-
         <FilterBar theme="dark" accent={c.primary} filters={filters} />
-        <StockGrid theme="dark" accent={c.primary} vehicles={filters.filtered} total={vehicles.length} clear={filters.clear} style="sport" />
+        <StockGrid theme="dark" accent={c.primary} filters={filters} variant="sport" total={vehicles.length} />
       </section>
 
-      {/* Sobre */}
       {store.about_text && (
         <section id="sobre" className="border-t border-white/10 bg-black">
           <div className="mx-auto grid max-w-7xl gap-12 px-6 py-24 md:grid-cols-2">
@@ -395,9 +372,7 @@ function SportBold({ store, vehicles }: Props) {
   );
 }
 
-/* ================================================================
- * 4) CLASSIC LUXURY — navy + dourado
- * ================================================================ */
+/* ================ 4) CLASSIC LUXURY ================ */
 function ClassicLuxury({ store, vehicles }: Props) {
   const c = useColors(store);
   const wa = waLink(store);
@@ -408,7 +383,6 @@ function ClassicLuxury({ store, vehicles }: Props) {
 
   return (
     <div className="min-h-screen bg-[#faf7f0] text-neutral-900">
-      {/* faixa superior fina */}
       <div className="h-1" style={{ background: `linear-gradient(90deg, ${navy}, ${gold}, ${navy})` }} />
 
       <header className="border-b border-neutral-200 bg-[#faf7f0]">
@@ -441,14 +415,12 @@ function ClassicLuxury({ store, vehicles }: Props) {
         </div>
       </header>
 
-      {/* Hero clássico */}
       <section className="relative overflow-hidden" style={{ background: navy }}>
         <div className="absolute inset-0 opacity-40">
           {hero ? <img src={hero} alt="" className="h-full w-full object-cover" /> : null}
         </div>
         <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${navy}dd, ${navy}f2)` }} />
-        {/* moldura */}
-        <div className="absolute inset-6 border pointer-events-none" style={{ borderColor: `${gold}55` }} />
+        <div className="pointer-events-none absolute inset-6 border" style={{ borderColor: `${gold}55` }} />
 
         <div className="relative mx-auto max-w-7xl px-10 py-28 text-center text-white md:py-36">
           <div className="mx-auto flex items-center justify-center gap-4">
@@ -472,7 +444,6 @@ function ClassicLuxury({ store, vehicles }: Props) {
         </div>
       </section>
 
-      {/* Estoque */}
       <section id="estoque" className="mx-auto max-w-7xl px-6 py-24">
         <div className="text-center">
           <span className="text-[11px] font-semibold uppercase tracking-[0.4em]" style={{ color: gold }}>Estoque</span>
@@ -480,14 +451,12 @@ function ClassicLuxury({ store, vehicles }: Props) {
           <div className="mx-auto mt-4 h-0.5 w-16" style={{ background: gold }} />
           <p className="mt-6 text-neutral-600">{filters.filtered.length} de {vehicles.length} veículos disponíveis</p>
         </div>
-
         <div className="mt-10">
           <FilterBar theme="light" accent={gold} filters={filters} />
-          <StockGrid theme="light" accent={gold} navy={navy} vehicles={filters.filtered} total={vehicles.length} clear={filters.clear} style="classic" />
+          <StockGrid theme="light" accent={gold} navy={navy} filters={filters} variant="classic" total={vehicles.length} />
         </div>
       </section>
 
-      {/* Sobre */}
       {store.about_text && (
         <section id="sobre" className="border-t border-neutral-200 bg-white">
           <div className="mx-auto grid max-w-7xl gap-14 px-6 py-24 md:grid-cols-2">
@@ -506,7 +475,7 @@ function ClassicLuxury({ store, vehicles }: Props) {
       )}
 
       <div className="h-1" style={{ background: `linear-gradient(90deg, ${navy}, ${gold}, ${navy})` }} />
-      <footer className="py-8 text-center text-xs text-neutral-500" style={{ background: navy, color: "#fff" }}>
+      <footer className="py-8 text-center text-xs" style={{ background: navy, color: "#fff" }}>
         <p>© {new Date().getFullYear()} {store.name}. Todos os direitos reservados.</p>
         <p className="mt-1 opacity-60">Site criado com AutoSite</p>
       </footer>
@@ -514,7 +483,7 @@ function ClassicLuxury({ store, vehicles }: Props) {
   );
 }
 
-/* ---------------- shared helpers/components ---------------- */
+/* ---------------- Shared UI ---------------- */
 
 function SectionEyebrow({ children, color }: { children: React.ReactNode; color: string }) {
   return (
@@ -560,21 +529,224 @@ function ContactList({ store, accent, light }: { store: StoreLike; accent: strin
   );
 }
 
-/* ---------------- Filter bar (shared) ---------------- */
+/* ---- Filter bar ---- */
+type FilterHook = ReturnType<typeof useStockFilters>;
 
-type FilterBarProps = {
-  theme: "dark" | "light";
-  accent: string;
-  minimal?: boolean;
-  filters: ReturnType<typeof useStockFilters>;
-};
-
-function FilterBar({ theme, filters, minimal }: FilterBarProps) {
-  const dark = theme === "dark";
+function FilterBar({ theme, accent, filters }: { theme: "dark" | "light"; accent: string; filters: FilterHook }) {
   const [open, setOpen] = useState(false);
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- state hook is at top
-  function useState<T>(v: T) { return require("react").useState(v); } // placeholder
-  return null as any;
+  const dark = theme === "dark";
+  const { state, set, brands, fuels, anyActive, clear } = filters;
+
+  const inputBase = dark
+    ? "w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30"
+    : "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400";
+  const btnBase = dark
+    ? "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-3 text-sm font-semibold hover:bg-white/10"
+    : "inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-neutral-50";
+  const searchBase = dark
+    ? "w-full rounded-full border border-white/10 bg-white/[0.04] py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30"
+    : "w-full rounded-full border border-neutral-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-neutral-400";
+  const iconCls = dark ? "text-white/40" : "text-neutral-400";
+  const labelCls = dark
+    ? "mb-1 block text-[11px] font-semibold uppercase tracking-wider text-white/50"
+    : "mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-500";
+
+  return (
+    <div className="mt-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${iconCls}`} />
+          <input value={state.q} onChange={(e) => set.setQ(e.target.value)} placeholder="Buscar por marca, modelo, cor…" className={searchBase} />
+        </div>
+        <button onClick={() => setOpen((s) => !s)} className={btnBase}>
+          <SlidersHorizontal className="h-4 w-4" /> Filtros
+        </button>
+        {anyActive && (
+          <button onClick={clear} className={dark ? "inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-white/60 hover:text-white" : "inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900"}>
+            <X className="h-4 w-4" /> Limpar
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className={`mt-4 grid gap-3 rounded-2xl border p-4 sm:grid-cols-2 lg:grid-cols-4 ${dark ? "border-white/10 bg-white/[0.03]" : "border-neutral-200 bg-neutral-50"}`}>
+          <label className="block">
+            <span className={labelCls}>Marca</span>
+            <select value={state.brand} onChange={(e) => set.setBrand(e.target.value)} className={inputBase}>
+              <option value="">Todas</option>
+              {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className={labelCls}>Combustível</span>
+            <select value={state.fuel} onChange={(e) => set.setFuel(e.target.value)} className={inputBase}>
+              <option value="">Todos</option>
+              {fuels.map((f) => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </label>
+          <div>
+            <span className={labelCls}>Ano</span>
+            <div className="flex gap-2">
+              <input inputMode="numeric" placeholder="De" value={state.minYear} onChange={(e) => set.setMinYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className={inputBase} />
+              <input inputMode="numeric" placeholder="Até" value={state.maxYear} onChange={(e) => set.setMaxYear(e.target.value.replace(/\D/g, "").slice(0, 4))} className={inputBase} />
+            </div>
+          </div>
+          <div>
+            <span className={labelCls}>Preço (R$)</span>
+            <div className="flex gap-2">
+              <input inputMode="decimal" placeholder="Mín" value={state.minPrice} onChange={(e) => set.setMinPrice(e.target.value)} className={inputBase} />
+              <input inputMode="decimal" placeholder="Máx" value={state.maxPrice} onChange={(e) => set.setMaxPrice(e.target.value)} className={inputBase} />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* accent underline decor */}
+      <div className="mt-2 h-px w-full opacity-0" style={{ background: accent }} />
+    </div>
+  );
 }
 
-// The placeholder above is wrong — replaced below with real component.
+/* ---- Stock grid ---- */
+type Variant = "premium" | "editorial" | "sport" | "classic";
+
+function StockGrid({
+  theme, accent, filters, total, variant, navy,
+}: {
+  theme: "dark" | "light"; accent: string; filters: FilterHook; total: number; variant: Variant; navy?: string;
+}) {
+  const list = filters.filtered;
+  const dark = theme === "dark";
+
+  if (total === 0) {
+    return (
+      <div className={`mt-8 rounded-2xl border p-16 text-center ${dark ? "border-white/10 bg-white/[0.02] text-white/60" : "border-dashed border-neutral-300 bg-neutral-50 text-neutral-600"}`}>
+        Nenhum veículo cadastrado ainda. Volte em breve!
+      </div>
+    );
+  }
+  if (list.length === 0) {
+    return (
+      <div className={`mt-8 rounded-2xl border p-16 text-center ${dark ? "border-white/10 bg-white/[0.02] text-white/60" : "border-dashed border-neutral-300 bg-neutral-50 text-neutral-600"}`}>
+        Nenhum veículo encontrado com esses filtros.
+        <div className="mt-4">
+          <button onClick={filters.clear} className="rounded-full px-5 py-2 text-sm font-semibold text-black" style={{ background: accent }}>
+            Limpar filtros
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const cols = variant === "editorial" ? "md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-3";
+  return (
+    <div className={`mt-8 grid gap-6 ${cols}`}>
+      {list.map((v) => (
+        <VehicleCard key={v.id} v={v} theme={theme} accent={accent} navy={navy} variant={variant} />
+      ))}
+    </div>
+  );
+}
+
+/* ---- Vehicle card ---- */
+function VehicleCard({
+  v, theme, accent, variant, navy,
+}: {
+  v: VehicleLike; theme: "dark" | "light"; accent: string; variant: Variant; navy?: string;
+}) {
+  const photo = firstPhoto(v);
+  const price = formatBRL(v.price ?? null);
+  const meta = [v.brand, v.model, v.year, v.fuel].filter(Boolean).join(" • ");
+
+  if (variant === "editorial") {
+    return (
+      <article className="group">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-200">
+          {photo ? (
+            <img src={photo} alt={v.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          ) : (
+            <div className="grid h-full place-items-center text-neutral-400"><Car className="h-12 w-12" /></div>
+          )}
+        </div>
+        <div className="mt-4 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-serif text-xl leading-tight">{v.title}</h3>
+            <p className="mt-1 text-[13px] text-neutral-500">{meta}</p>
+          </div>
+          {price && <p className="whitespace-nowrap font-serif text-xl">{price}</p>}
+        </div>
+      </article>
+    );
+  }
+
+  if (variant === "sport") {
+    return (
+      <article className="group overflow-hidden border border-white/10 bg-black/40 transition hover:border-white/30">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-900">
+          {photo ? (
+            <img src={photo} alt={v.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+          ) : (
+            <div className="grid h-full place-items-center text-white/30"><Car className="h-12 w-12" /></div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 h-1" style={{ background: accent }} />
+        </div>
+        <div className="p-5">
+          <h3 className="text-lg font-black uppercase tracking-tight">{v.title}</h3>
+          <p className="mt-1 text-xs uppercase tracking-widest text-white/50">{meta}</p>
+          <div className="mt-4 flex items-end justify-between">
+            {price && <p className="text-2xl font-black" style={{ color: accent }}>{price}</p>}
+            {v.km != null && <p className="text-xs text-white/50">{Number(v.km).toLocaleString("pt-BR")} km</p>}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  if (variant === "classic") {
+    return (
+      <article className="group overflow-hidden border border-neutral-200 bg-white transition hover:shadow-xl">
+        <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+          {photo ? (
+            <img src={photo} alt={v.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          ) : (
+            <div className="grid h-full place-items-center text-neutral-400"><Car className="h-12 w-12" /></div>
+          )}
+        </div>
+        <div className="p-6">
+          <h3 className="font-serif text-xl font-bold" style={{ color: navy ?? "#0f1b3d" }}>{v.title}</h3>
+          <p className="mt-1 text-sm text-neutral-500">{meta}</p>
+          <div className="mt-4 h-px" style={{ background: accent }} />
+          <div className="mt-4 flex items-end justify-between">
+            {price && <p className="font-serif text-2xl font-bold" style={{ color: navy ?? "#0f1b3d" }}>{price}</p>}
+            {v.km != null && <p className="text-xs text-neutral-500">{Number(v.km).toLocaleString("pt-BR")} km</p>}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // premium (dark)
+  return (
+    <article className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.06]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/60">
+        {photo ? (
+          <img src={photo} alt={v.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        ) : (
+          <div className="grid h-full place-items-center text-white/30"><Car className="h-12 w-12" /></div>
+        )}
+        {v.featured && (
+          <span className="absolute left-4 top-4 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black" style={{ background: accent }}>
+            Destaque
+          </span>
+        )}
+      </div>
+      <div className="p-6">
+        <h3 className="font-serif text-xl font-bold">{v.title}</h3>
+        <p className="mt-1 text-sm text-white/50">{meta}</p>
+        <div className="mt-5 flex items-end justify-between">
+          {price && <p className="text-2xl font-bold" style={{ color: accent }}>{price}</p>}
+          {v.km != null && <p className="text-xs text-white/50">{Number(v.km).toLocaleString("pt-BR")} km</p>}
+        </div>
+      </div>
+    </article>
+  );
+}
