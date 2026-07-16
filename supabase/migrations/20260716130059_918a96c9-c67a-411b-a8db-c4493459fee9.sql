@@ -1,0 +1,1 @@
+ALTER FUNCTION public.enforce_single_admin() SET search_path = public;
