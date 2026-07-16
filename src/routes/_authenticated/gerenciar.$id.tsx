@@ -163,6 +163,7 @@ function Manage() {
           {([
             ["info", "Informações"],
             ["textos", "Textos"],
+            ["estilo", "Estilo"],
             ["veiculos", `Veículos (${vehicles.length})`],
             ["historico", "Histórico"],
           ] as const).map(([k, label]) => (
@@ -181,6 +182,7 @@ function Manage() {
         <div className="mt-6">
           {tab === "info" && <InfoTab store={store} onSave={saveStore} saving={savingStore} />}
           {tab === "textos" && <CopyTab store={store} onSave={saveStore} saving={savingStore} />}
+          {tab === "estilo" && <StyleTab store={store} onSave={saveStore} saving={savingStore} />}
           {tab === "veiculos" && (
             <VehiclesTab
               vehicles={vehicles}
