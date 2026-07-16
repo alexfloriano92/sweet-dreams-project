@@ -22,6 +22,7 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signupSentTo, setSignupSentTo] = useState<string | null>(null);
 
   useEffect(() => {
     // If already signed in, bounce to the app
