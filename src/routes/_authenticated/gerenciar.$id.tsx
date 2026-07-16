@@ -704,7 +704,9 @@ function ImportCsvDialog({
 
   const doImport = async () => {
     if (rows.length === 0) return;
+    cancelRef.current = false;
     setImporting(true);
+    setProgress({ current: 0, total: 0, phase: "Preparando…", inserted: 0, updated: 0 });
     try {
       const { invalidIdx: idxSet } = validateRows(rows);
       const payload = rows
@@ -728,13 +730,15 @@ function ImportCsvDialog({
 
       if (payload.length === 0) { toast.error("Nenhuma linha válida."); return; }
 
+      setProgress({ current: 0, total: payload.length, phase: "Verificando existentes…", inserted: 0, updated: 0 });
       const titles = payload.map((p) => p.title);
       const { data: existing } = await supabase
         .from("vehicles").select("id,title").eq("store_id", storeId).in("title", titles);
       const map = new Map((existing ?? []).map((e) => [e.title, e.id]));
 
-      let inserted = 0, updated = 0;
+      let inserted = 0, updated = 0, done = 0;
       for (const p of payload) {
+        if (cancelRef.current) break;
         const id = map.get(p.title);
         if (id) {
           const { error } = await supabase.from("vehicles").update(p).eq("id", id);
@@ -745,13 +749,21 @@ function ImportCsvDialog({
           if (error) throw error;
           inserted++;
         }
+        done++;
+        setProgress({ current: done, total: payload.length, phase: "Importando…", inserted, updated });
       }
-      toast.success(`Importação concluída: ${inserted} novo(s), ${updated} atualizado(s)`);
+      if (cancelRef.current) {
+        toast.warning(`Importação cancelada: ${inserted} novo(s), ${updated} atualizado(s) já foram gravados.`);
+      } else {
+        toast.success(`Importação concluída: ${inserted} novo(s), ${updated} atualizado(s)`);
+      }
       onDone();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao importar CSV");
     } finally {
       setImporting(false);
+      setProgress(null);
+      cancelRef.current = false;
     }
   };
 
