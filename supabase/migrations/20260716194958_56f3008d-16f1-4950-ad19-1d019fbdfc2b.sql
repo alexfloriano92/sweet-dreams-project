@@ -1,0 +1,1 @@
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS template text NOT NULL DEFAULT 'premium-dark';
