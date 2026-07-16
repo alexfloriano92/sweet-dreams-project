@@ -89,8 +89,7 @@ function AuthPage() {
               : "Enviaremos um link para redefinir a sua senha."}
         </p>
 
-
-        <form onSubmit={handleEmail} className={`space-y-3 ${mode === "forgot" ? "mt-6" : ""}`}>
+        <form onSubmit={handleEmail} className="mt-6 space-y-3">
           {mode === "signup" && (
             <Field icon={<User className="h-4 w-4" />} value={name} onChange={setName} placeholder="Nome completo" />
           )}
